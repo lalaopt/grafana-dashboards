@@ -161,7 +161,7 @@
       "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
       "description": "요청 큐 대기 시간 p95.",
       "fieldConfig": {"defaults": {"unit": "s", "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 10}}, "overrides": []},
-      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 26},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 26},
       "id": 8,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
@@ -172,23 +172,9 @@
     },
     {
       "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-      "description": "Prefill vs Decode 단계 소요 시간 p95.",
-      "fieldConfig": {"defaults": {"unit": "s", "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 10}}, "overrides": []},
-      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 26},
-      "id": 9,
-      "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
-      "targets": [
-        {"expr": "histogram_quantile(${percentile:raw}, sum by (le${groupby:raw}) (rate(vllm:request_prefill_time_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "prefill ${percentile:text} {{accelerator}}{{model}}", "refId": "A"},
-        {"expr": "histogram_quantile(${percentile:raw}, sum by (le${groupby:raw}) (rate(vllm:request_decode_time_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "decode ${percentile:text} {{accelerator}}{{model}}", "refId": "B"}
-      ],
-      "title": "Prefill vs Decode (${percentile:text})",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
       "description": "현재 활성 (model × accelerator) 배포 수.",
       "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]}}, "overrides": []},
-      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 26},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 26},
       "id": 10,
       "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
       "targets": [

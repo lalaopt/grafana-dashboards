@@ -78,6 +78,7 @@ variable value 인코딩: `(total)` → `""`, `accelerator` → `", accelerator"
 | `model_a100` (multi, All, **hidden**) | A100 row 의 panel repeat 소스 |
 | `model_h100` (multi, All, **hidden**) | H100 row 의 panel repeat 소스 |
 | `model_v100` (multi, All, **hidden**) | V100 row 의 panel repeat 소스 |
+| `percentile` (custom, single) | SLO Latency · Prefill vs Decode 패널이 표시할 분위수 |
 
 가속기당 model 변수를 분리한 이유는 Grafana 의 row repeat × panel repeat 중첩 시 nested variable scope 가 동작하지 않기 때문. 가속기는 잘 늘어나지 않으므로 명시적 분리가 유지보수 부담 적음.
 
@@ -106,7 +107,6 @@ variable value 인코딩: `(total)` → `""`, `accelerator` → `", accelerator"
 | ② System | Concurrency | timeseries (stacked area, group-by 토글) | running + waiting 누적. group-by 시 가속기별 running/waiting 분리. |
 | ② System | KV Cache Usage + Waiting | timeseries (avg/max + dashed waiting, group-by 토글) | avg/max 만 보면 한계 도달 여부만. waiting 큐 길이를 이중 축으로 같이 그려 "사용률 높고 waiting 도 늘면 실질 압력" 컨텍스트. group-by 시 가속기/모델별 avg·max·waiting. |
 | ② System | Queue Wait (선택 분위수) | timeseries (group-by + percentile 토글) | 큐 대기 자체가 SLO 침해 신호. |
-| ② System | Prefill vs Decode (선택 분위수) | timeseries (group-by + percentile 토글) | 어느 단계가 병목인지 분리해서 본다. |
 | ② System | Active Deployments | stat | 현재 운영 중인 모델×가속기 조합 수. 상황 파악용. |
 | ③ Prefix Cache | Prefix Cache Hit Rate + Queries/sec | timeseries (full width, dual axis, group-by 토글) | hit rate 단독은 분모 0(트래픽 없음/prefix caching 비활성) 시 NaN 으로 빈 시리즈 → 원인 불분명. queries/sec 보조선을 함께 그려서 0/0 상황을 시각적으로 즉시 구분. group-by 시 그룹별 hit rate 와 queries/sec 분리. |
 | ④ Workload | Prompt Token Length | heatmap (group-by 토글) | 입력 길이 분포. histogram 메트릭이라 heatmap 자연스러움. group-by 시 multi-series row 분리. |
@@ -118,18 +118,21 @@ variable value 인코딩: `(total)` → `""`, `accelerator` → `", accelerator"
 
 ## Per-Model 대시보드 — 패널 선택 근거
 
-각 카테고리에 **1개 핵심 지표** 만 골라 그리드로 펼쳤다. 모델 수십 개를 동시에 비교할 때 패널 1개당 1개 지표가 인지 부담이 가장 낮다. 상세 분포·다중 분위수는 Overview 에서 본다.
+이전 stat + sparkline 위주 구조는 정보 밀도가 낮고 X-Y 축 없이 숫자만 노출되어 시계열 컨텍스트 부족. **Overview 와 같은 timeseries 패널로 재설계**, 카테고리 5개 × 가속기 3개 = 15 row.
 
-| Row | 패널 | 시각화 | 임계값 | 이유 |
-|-----|------|--------|--------|------|
-| ① SLO | TTFT p95 | stat + area sparkline | 1s 주의, 3s 위험 | p95 한 숫자 + 추세. 색으로 위험 모델 즉시 식별. |
-| ② System | KV Cache % | stat + area sparkline | 70% 주의(yellow), 90% 위험(red) | gauge 는 현재값만 보여서 burst 를 놓침. stat + area sparkline 으로 현재값과 추세를 한 셀에. 임계 색은 thresholds 로 유지. |
-| ③ KV cache | Prefix Hit% · Queries/sec | dual-value stat (vertical) | hit% <20% 위험(red), ≥50% 좋음(green); queries/sec 는 색 없음 | hit% 만 표시하면 queries=0 일 때 NaN 으로 "No data" 가 떠서 노 트래픽인지 패널 버그인지 헷갈림. queries/sec 를 같이 보여 0/0 상황을 직접 노출. |
-| ④ Workload | Gen Throughput | stat + area sparkline | (단색 blue) | 절대값 비교용. 임계값 없음. |
+| Row | 패널 (multi-series timeseries) | 이유 |
+|-----|--------------------------------|------|
+| ① SLO Latency | TTFT · TPOT · E2E (선택 분위수 1개) | 3 가지 latency 가 한 패널, 분위수는 `percentile` variable. 라인 3개라 깔끔. |
+| ② Throughput | prompt + generation (tok/s) | 입력 vs 출력 처리량을 동시에. |
+| ③ System (Concurrency + KV) | running + waiting (stacked) + kv% (right axis) | 동시성 + 캐시 압력을 한 panel 안. KV% 는 우측 축, 점선 오렌지로 구분. |
+| ④ Prefix Cache | hit rate (left) + queries/sec (right) | 분모 0 즉시 인지를 위해 queries/sec 함께. 점선 블루. |
+| ⑤ Prefill vs Decode | prefill + decode (선택 분위수) | Aggregation 에서 옮긴 패널. 모델별로 단계 시간 차이를 본다. (Aggregation 에서 group-by 시 prefill+decode×그룹 라인이 폭발해 부적합) |
 
-패널 규격: `gridPos.w=4, h=4`, `maxPerRow=6`, `repeatDirection=horizontal`. 24-wide 그리드에 6 panel/줄. 30개 모델이면 5줄.
+**패널 규격**: `gridPos.w=8, h=6`, `maxPerRow=3`, `repeatDirection=horizontal`. 24-wide 그리드에 3 panel/줄. 30개 모델이면 10줄.
 
-모든 row 는 기본 collapsed. 초기 로드 시 panel query 가 0개이므로 빠르고, 사용자가 보고 싶은 카테고리만 펼침.
+**가속기별 sub-row**: 카테고리 row 5개 × A100/H100/V100 = 15 row, 모두 기본 collapsed. 초기 로드 시 panel query 가 0개이므로 빠르다. 가속기 추가 시 sub-row + `model_<accel>` variable 추가.
+
+**percentile 동작**: SLO Latency 와 Prefill vs Decode 두 카테고리만 percentile variable 적용. Throughput·System·Prefix Cache 는 분위수 무관.
 
 ---
 

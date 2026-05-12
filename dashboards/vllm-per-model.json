@@ -12,7 +12,7 @@
       }
     ]
   },
-  "description": "모든 배포된 모델을 가속기별로 묶어 그리드로 나열. 카테고리별 row 는 기본 collapsed.",
+  "description": "모든 배포된 모델을 가속기별로 묶어 timeseries 그리드로 나열. 카테고리 5개 × 가속기 3개 = 15 row, 기본 collapsed.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -35,24 +35,26 @@
       "collapsed": true,
       "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
       "id": 200,
-      "title": "① SLO — TTFT p95 (A100)",
+      "title": "① SLO Latency — A100",
       "type": "row",
       "panels": [
         {
           "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-          "description": "TTFT p95 (초). 임계값: 1s 주의 / 3s 위험.",
-          "fieldConfig": {"defaults": {"unit": "s", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}, {"color": "red", "value": 3}]}}, "overrides": []},
-          "gridPos": {"h": 4, "w": 4, "x": 0, "y": 1},
+          "description": "TTFT / TPOT / E2E (선택 분위수)",
+          "fieldConfig": {"defaults": {"unit": "s", "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 5, "lineWidth": 1}}, "overrides": []},
+          "gridPos": {"h": 6, "w": 8, "x": 0, "y": 1},
           "id": 1,
-          "maxPerRow": 6,
-          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "maxPerRow": 3,
+          "options": {"legend": {"displayMode": "list", "placement": "bottom", "calcs": []}, "tooltip": {"mode": "multi", "sort": "desc"}},
           "repeat": "model_a100",
           "repeatDirection": "h",
           "targets": [
-            {"expr": "histogram_quantile(0.95, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket{model=\"$model_a100\",accelerator=\"a100\"}[5m])))", "legendFormat": "p95", "refId": "A"}
+            {"expr": "histogram_quantile(${percentile:raw}, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket{model=\"$model_a100\",accelerator=\"a100\"}[5m])))", "legendFormat": "TTFT ${percentile:text}", "refId": "A"},
+            {"expr": "histogram_quantile(${percentile:raw}, sum by (le) (rate(vllm:inter_token_latency_seconds_bucket{model=\"$model_a100\",accelerator=\"a100\"}[5m])))", "legendFormat": "TPOT ${percentile:text}", "refId": "B"},
+            {"expr": "histogram_quantile(${percentile:raw}, sum by (le) (rate(vllm:e2e_request_latency_seconds_bucket{model=\"$model_a100\",accelerator=\"a100\"}[5m])))", "legendFormat": "E2E ${percentile:text}", "refId": "C"}
           ],
           "title": "${model_a100}",
-          "type": "stat"
+          "type": "timeseries"
         }
       ]
     },
@@ -60,24 +62,26 @@
       "collapsed": true,
       "gridPos": {"h": 1, "w": 24, "x": 0, "y": 1},
       "id": 201,
-      "title": "① SLO — TTFT p95 (H100)",
+      "title": "① SLO Latency — H100",
       "type": "row",
       "panels": [
         {
           "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-          "description": "TTFT p95 (초). 임계값: 1s 주의 / 3s 위험.",
-          "fieldConfig": {"defaults": {"unit": "s", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}, {"color": "red", "value": 3}]}}, "overrides": []},
-          "gridPos": {"h": 4, "w": 4, "x": 0, "y": 2},
+          "description": "TTFT / TPOT / E2E (선택 분위수)",
+          "fieldConfig": {"defaults": {"unit": "s", "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 5, "lineWidth": 1}}, "overrides": []},
+          "gridPos": {"h": 6, "w": 8, "x": 0, "y": 2},
           "id": 2,
-          "maxPerRow": 6,
-          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "maxPerRow": 3,
+          "options": {"legend": {"displayMode": "list", "placement": "bottom", "calcs": []}, "tooltip": {"mode": "multi", "sort": "desc"}},
           "repeat": "model_h100",
           "repeatDirection": "h",
           "targets": [
-            {"expr": "histogram_quantile(0.95, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket{model=\"$model_h100\",accelerator=\"h100\"}[5m])))", "legendFormat": "p95", "refId": "A"}
+            {"expr": "histogram_quantile(${percentile:raw}, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket{model=\"$model_h100\",accelerator=\"h100\"}[5m])))", "legendFormat": "TTFT ${percentile:text}", "refId": "A"},
+            {"expr": "histogram_quantile(${percentile:raw}, sum by (le) (rate(vllm:inter_token_latency_seconds_bucket{model=\"$model_h100\",accelerator=\"h100\"}[5m])))", "legendFormat": "TPOT ${percentile:text}", "refId": "B"},
+            {"expr": "histogram_quantile(${percentile:raw}, sum by (le) (rate(vllm:e2e_request_latency_seconds_bucket{model=\"$model_h100\",accelerator=\"h100\"}[5m])))", "legendFormat": "E2E ${percentile:text}", "refId": "C"}
           ],
           "title": "${model_h100}",
-          "type": "stat"
+          "type": "timeseries"
         }
       ]
     },
@@ -85,24 +89,26 @@
       "collapsed": true,
       "gridPos": {"h": 1, "w": 24, "x": 0, "y": 2},
       "id": 202,
-      "title": "① SLO — TTFT p95 (V100)",
+      "title": "① SLO Latency — V100",
       "type": "row",
       "panels": [
         {
           "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-          "description": "TTFT p95 (초). 임계값: 1s 주의 / 3s 위험.",
-          "fieldConfig": {"defaults": {"unit": "s", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}, {"color": "red", "value": 3}]}}, "overrides": []},
-          "gridPos": {"h": 4, "w": 4, "x": 0, "y": 3},
+          "description": "TTFT / TPOT / E2E (선택 분위수)",
+          "fieldConfig": {"defaults": {"unit": "s", "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 5, "lineWidth": 1}}, "overrides": []},
+          "gridPos": {"h": 6, "w": 8, "x": 0, "y": 3},
           "id": 3,
-          "maxPerRow": 6,
-          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "maxPerRow": 3,
+          "options": {"legend": {"displayMode": "list", "placement": "bottom", "calcs": []}, "tooltip": {"mode": "multi", "sort": "desc"}},
           "repeat": "model_v100",
           "repeatDirection": "h",
           "targets": [
-            {"expr": "histogram_quantile(0.95, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket{model=\"$model_v100\",accelerator=\"v100\"}[5m])))", "legendFormat": "p95", "refId": "A"}
+            {"expr": "histogram_quantile(${percentile:raw}, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket{model=\"$model_v100\",accelerator=\"v100\"}[5m])))", "legendFormat": "TTFT ${percentile:text}", "refId": "A"},
+            {"expr": "histogram_quantile(${percentile:raw}, sum by (le) (rate(vllm:inter_token_latency_seconds_bucket{model=\"$model_v100\",accelerator=\"v100\"}[5m])))", "legendFormat": "TPOT ${percentile:text}", "refId": "B"},
+            {"expr": "histogram_quantile(${percentile:raw}, sum by (le) (rate(vllm:e2e_request_latency_seconds_bucket{model=\"$model_v100\",accelerator=\"v100\"}[5m])))", "legendFormat": "E2E ${percentile:text}", "refId": "C"}
           ],
           "title": "${model_v100}",
-          "type": "stat"
+          "type": "timeseries"
         }
       ]
     },
@@ -110,24 +116,25 @@
       "collapsed": true,
       "gridPos": {"h": 1, "w": 24, "x": 0, "y": 3},
       "id": 203,
-      "title": "② System — KV Cache Usage (A100)",
+      "title": "② Throughput — A100",
       "type": "row",
       "panels": [
         {
           "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-          "description": "KV 캐시 사용률. 임계값: 70% 주의 / 90% 위험.",
-          "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.7}, {"color": "red", "value": 0.9}]}}, "overrides": []},
-          "gridPos": {"h": 4, "w": 4, "x": 0, "y": 4},
+          "description": "prompt + generation 토큰 처리량",
+          "fieldConfig": {"defaults": {"unit": "tps", "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 5, "lineWidth": 1}}, "overrides": []},
+          "gridPos": {"h": 6, "w": 8, "x": 0, "y": 4},
           "id": 4,
-          "maxPerRow": 6,
-          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "maxPerRow": 3,
+          "options": {"legend": {"displayMode": "list", "placement": "bottom", "calcs": []}, "tooltip": {"mode": "multi", "sort": "desc"}},
           "repeat": "model_a100",
           "repeatDirection": "h",
           "targets": [
-            {"expr": "vllm:kv_cache_usage_perc{model=\"$model_a100\",accelerator=\"a100\"}", "legendFormat": "kv%", "refId": "A"}
+            {"expr": "sum(rate(vllm:prompt_tokens_total{model=\"$model_a100\",accelerator=\"a100\"}[1m]))", "legendFormat": "prompt", "refId": "A"},
+            {"expr": "sum(rate(vllm:generation_tokens_total{model=\"$model_a100\",accelerator=\"a100\"}[1m]))", "legendFormat": "generation", "refId": "B"}
           ],
           "title": "${model_a100}",
-          "type": "stat"
+          "type": "timeseries"
         }
       ]
     },
@@ -135,24 +142,25 @@
       "collapsed": true,
       "gridPos": {"h": 1, "w": 24, "x": 0, "y": 4},
       "id": 204,
-      "title": "② System — KV Cache Usage (H100)",
+      "title": "② Throughput — H100",
       "type": "row",
       "panels": [
         {
           "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-          "description": "KV 캐시 사용률. 임계값: 70% 주의 / 90% 위험.",
-          "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.7}, {"color": "red", "value": 0.9}]}}, "overrides": []},
-          "gridPos": {"h": 4, "w": 4, "x": 0, "y": 5},
+          "description": "prompt + generation 토큰 처리량",
+          "fieldConfig": {"defaults": {"unit": "tps", "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 5, "lineWidth": 1}}, "overrides": []},
+          "gridPos": {"h": 6, "w": 8, "x": 0, "y": 5},
           "id": 5,
-          "maxPerRow": 6,
-          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "maxPerRow": 3,
+          "options": {"legend": {"displayMode": "list", "placement": "bottom", "calcs": []}, "tooltip": {"mode": "multi", "sort": "desc"}},
           "repeat": "model_h100",
           "repeatDirection": "h",
           "targets": [
-            {"expr": "vllm:kv_cache_usage_perc{model=\"$model_h100\",accelerator=\"h100\"}", "legendFormat": "kv%", "refId": "A"}
+            {"expr": "sum(rate(vllm:prompt_tokens_total{model=\"$model_h100\",accelerator=\"h100\"}[1m]))", "legendFormat": "prompt", "refId": "A"},
+            {"expr": "sum(rate(vllm:generation_tokens_total{model=\"$model_h100\",accelerator=\"h100\"}[1m]))", "legendFormat": "generation", "refId": "B"}
           ],
           "title": "${model_h100}",
-          "type": "stat"
+          "type": "timeseries"
         }
       ]
     },
@@ -160,24 +168,25 @@
       "collapsed": true,
       "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5},
       "id": 205,
-      "title": "② System — KV Cache Usage (V100)",
+      "title": "② Throughput — V100",
       "type": "row",
       "panels": [
         {
           "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-          "description": "KV 캐시 사용률. 임계값: 70% 주의 / 90% 위험.",
-          "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.7}, {"color": "red", "value": 0.9}]}}, "overrides": []},
-          "gridPos": {"h": 4, "w": 4, "x": 0, "y": 6},
+          "description": "prompt + generation 토큰 처리량",
+          "fieldConfig": {"defaults": {"unit": "tps", "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 5, "lineWidth": 1}}, "overrides": []},
+          "gridPos": {"h": 6, "w": 8, "x": 0, "y": 6},
           "id": 6,
-          "maxPerRow": 6,
-          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "maxPerRow": 3,
+          "options": {"legend": {"displayMode": "list", "placement": "bottom", "calcs": []}, "tooltip": {"mode": "multi", "sort": "desc"}},
           "repeat": "model_v100",
           "repeatDirection": "h",
           "targets": [
-            {"expr": "vllm:kv_cache_usage_perc{model=\"$model_v100\",accelerator=\"v100\"}", "legendFormat": "kv%", "refId": "A"}
+            {"expr": "sum(rate(vllm:prompt_tokens_total{model=\"$model_v100\",accelerator=\"v100\"}[1m]))", "legendFormat": "prompt", "refId": "A"},
+            {"expr": "sum(rate(vllm:generation_tokens_total{model=\"$model_v100\",accelerator=\"v100\"}[1m]))", "legendFormat": "generation", "refId": "B"}
           ],
           "title": "${model_v100}",
-          "type": "stat"
+          "type": "timeseries"
         }
       ]
     },
@@ -185,37 +194,44 @@
       "collapsed": true,
       "gridPos": {"h": 1, "w": 24, "x": 0, "y": 6},
       "id": 206,
-      "title": "③ KV Cache — Prefix Hit Rate (A100)",
+      "title": "③ System (Concurrency + KV) — A100",
       "type": "row",
       "panels": [
         {
           "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-          "description": "Prefix cache hit% + queries/sec 동시 표시. queries 가 0 이면 hit% 는 NaN (트래픽 없음 또는 prefix caching 비활성 신호).",
+          "description": "running + waiting (left axis, stacked) + KV cache % (right axis)",
           "fieldConfig": {
-            "defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.2}, {"color": "green", "value": 0.5}]}},
+            "defaults": {"unit": "short", "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 30, "lineWidth": 1, "stacking": {"mode": "normal", "group": "A"}}},
             "overrides": [
               {
-                "matcher": {"id": "byFrameRefID", "options": "B"},
+                "matcher": {"id": "byFrameRefID", "options": "C"},
                 "properties": [
-                  {"id": "unit", "value": "reqps"},
-                  {"id": "max", "value": null},
-                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}
+                  {"id": "unit", "value": "percentunit"},
+                  {"id": "max", "value": 1},
+                  {"id": "min", "value": 0},
+                  {"id": "custom.axisPlacement", "value": "right"},
+                  {"id": "custom.axisLabel", "value": "kv%"},
+                  {"id": "custom.stacking", "value": {"mode": "none"}},
+                  {"id": "custom.fillOpacity", "value": 0},
+                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}},
+                  {"id": "custom.lineStyle", "value": {"fill": "dash", "dash": [6, 4]}}
                 ]
               }
             ]
           },
-          "gridPos": {"h": 4, "w": 4, "x": 0, "y": 7},
+          "gridPos": {"h": 6, "w": 8, "x": 0, "y": 7},
           "id": 7,
-          "maxPerRow": 6,
-          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "center", "orientation": "vertical", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name"},
+          "maxPerRow": 3,
+          "options": {"legend": {"displayMode": "list", "placement": "bottom", "calcs": []}, "tooltip": {"mode": "multi", "sort": "desc"}},
           "repeat": "model_a100",
           "repeatDirection": "h",
           "targets": [
-            {"expr": "rate(vllm:prefix_cache_hits{model=\"$model_a100\",accelerator=\"a100\"}[5m]) / rate(vllm:prefix_cache_queries{model=\"$model_a100\",accelerator=\"a100\"}[5m])", "legendFormat": "hit%", "refId": "A"},
-            {"expr": "rate(vllm:prefix_cache_queries{model=\"$model_a100\",accelerator=\"a100\"}[5m])", "legendFormat": "q/s", "refId": "B"}
+            {"expr": "vllm:num_requests_running{model=\"$model_a100\",accelerator=\"a100\"}", "legendFormat": "running", "refId": "A"},
+            {"expr": "vllm:num_requests_waiting{model=\"$model_a100\",accelerator=\"a100\"}", "legendFormat": "waiting", "refId": "B"},
+            {"expr": "vllm:kv_cache_usage_perc{model=\"$model_a100\",accelerator=\"a100\"}", "legendFormat": "kv%", "refId": "C"}
           ],
           "title": "${model_a100}",
-          "type": "stat"
+          "type": "timeseries"
         }
       ]
     },
@@ -223,37 +239,44 @@
       "collapsed": true,
       "gridPos": {"h": 1, "w": 24, "x": 0, "y": 7},
       "id": 207,
-      "title": "③ KV Cache — Prefix Hit Rate (H100)",
+      "title": "③ System (Concurrency + KV) — H100",
       "type": "row",
       "panels": [
         {
           "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-          "description": "Prefix cache hit% + queries/sec 동시 표시. queries 가 0 이면 hit% 는 NaN (트래픽 없음 또는 prefix caching 비활성 신호).",
+          "description": "running + waiting (left axis, stacked) + KV cache % (right axis)",
           "fieldConfig": {
-            "defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.2}, {"color": "green", "value": 0.5}]}},
+            "defaults": {"unit": "short", "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 30, "lineWidth": 1, "stacking": {"mode": "normal", "group": "A"}}},
             "overrides": [
               {
-                "matcher": {"id": "byFrameRefID", "options": "B"},
+                "matcher": {"id": "byFrameRefID", "options": "C"},
                 "properties": [
-                  {"id": "unit", "value": "reqps"},
-                  {"id": "max", "value": null},
-                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}
+                  {"id": "unit", "value": "percentunit"},
+                  {"id": "max", "value": 1},
+                  {"id": "min", "value": 0},
+                  {"id": "custom.axisPlacement", "value": "right"},
+                  {"id": "custom.axisLabel", "value": "kv%"},
+                  {"id": "custom.stacking", "value": {"mode": "none"}},
+                  {"id": "custom.fillOpacity", "value": 0},
+                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}},
+                  {"id": "custom.lineStyle", "value": {"fill": "dash", "dash": [6, 4]}}
                 ]
               }
             ]
           },
-          "gridPos": {"h": 4, "w": 4, "x": 0, "y": 8},
+          "gridPos": {"h": 6, "w": 8, "x": 0, "y": 8},
           "id": 8,
-          "maxPerRow": 6,
-          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "center", "orientation": "vertical", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name"},
+          "maxPerRow": 3,
+          "options": {"legend": {"displayMode": "list", "placement": "bottom", "calcs": []}, "tooltip": {"mode": "multi", "sort": "desc"}},
           "repeat": "model_h100",
           "repeatDirection": "h",
           "targets": [
-            {"expr": "rate(vllm:prefix_cache_hits{model=\"$model_h100\",accelerator=\"h100\"}[5m]) / rate(vllm:prefix_cache_queries{model=\"$model_h100\",accelerator=\"h100\"}[5m])", "legendFormat": "hit%", "refId": "A"},
-            {"expr": "rate(vllm:prefix_cache_queries{model=\"$model_h100\",accelerator=\"h100\"}[5m])", "legendFormat": "q/s", "refId": "B"}
+            {"expr": "vllm:num_requests_running{model=\"$model_h100\",accelerator=\"h100\"}", "legendFormat": "running", "refId": "A"},
+            {"expr": "vllm:num_requests_waiting{model=\"$model_h100\",accelerator=\"h100\"}", "legendFormat": "waiting", "refId": "B"},
+            {"expr": "vllm:kv_cache_usage_perc{model=\"$model_h100\",accelerator=\"h100\"}", "legendFormat": "kv%", "refId": "C"}
           ],
           "title": "${model_h100}",
-          "type": "stat"
+          "type": "timeseries"
         }
       ]
     },
@@ -261,37 +284,44 @@
       "collapsed": true,
       "gridPos": {"h": 1, "w": 24, "x": 0, "y": 8},
       "id": 208,
-      "title": "③ KV Cache — Prefix Hit Rate (V100)",
+      "title": "③ System (Concurrency + KV) — V100",
       "type": "row",
       "panels": [
         {
           "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-          "description": "Prefix cache hit% + queries/sec 동시 표시. queries 가 0 이면 hit% 는 NaN (트래픽 없음 또는 prefix caching 비활성 신호).",
+          "description": "running + waiting (left axis, stacked) + KV cache % (right axis)",
           "fieldConfig": {
-            "defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.2}, {"color": "green", "value": 0.5}]}},
+            "defaults": {"unit": "short", "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 30, "lineWidth": 1, "stacking": {"mode": "normal", "group": "A"}}},
             "overrides": [
               {
-                "matcher": {"id": "byFrameRefID", "options": "B"},
+                "matcher": {"id": "byFrameRefID", "options": "C"},
                 "properties": [
-                  {"id": "unit", "value": "reqps"},
-                  {"id": "max", "value": null},
-                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}
+                  {"id": "unit", "value": "percentunit"},
+                  {"id": "max", "value": 1},
+                  {"id": "min", "value": 0},
+                  {"id": "custom.axisPlacement", "value": "right"},
+                  {"id": "custom.axisLabel", "value": "kv%"},
+                  {"id": "custom.stacking", "value": {"mode": "none"}},
+                  {"id": "custom.fillOpacity", "value": 0},
+                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}},
+                  {"id": "custom.lineStyle", "value": {"fill": "dash", "dash": [6, 4]}}
                 ]
               }
             ]
           },
-          "gridPos": {"h": 4, "w": 4, "x": 0, "y": 9},
+          "gridPos": {"h": 6, "w": 8, "x": 0, "y": 9},
           "id": 9,
-          "maxPerRow": 6,
-          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "center", "orientation": "vertical", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name"},
+          "maxPerRow": 3,
+          "options": {"legend": {"displayMode": "list", "placement": "bottom", "calcs": []}, "tooltip": {"mode": "multi", "sort": "desc"}},
           "repeat": "model_v100",
           "repeatDirection": "h",
           "targets": [
-            {"expr": "rate(vllm:prefix_cache_hits{model=\"$model_v100\",accelerator=\"v100\"}[5m]) / rate(vllm:prefix_cache_queries{model=\"$model_v100\",accelerator=\"v100\"}[5m])", "legendFormat": "hit%", "refId": "A"},
-            {"expr": "rate(vllm:prefix_cache_queries{model=\"$model_v100\",accelerator=\"v100\"}[5m])", "legendFormat": "q/s", "refId": "B"}
+            {"expr": "vllm:num_requests_running{model=\"$model_v100\",accelerator=\"v100\"}", "legendFormat": "running", "refId": "A"},
+            {"expr": "vllm:num_requests_waiting{model=\"$model_v100\",accelerator=\"v100\"}", "legendFormat": "waiting", "refId": "B"},
+            {"expr": "vllm:kv_cache_usage_perc{model=\"$model_v100\",accelerator=\"v100\"}", "legendFormat": "kv%", "refId": "C"}
           ],
           "title": "${model_v100}",
-          "type": "stat"
+          "type": "timeseries"
         }
       ]
     },
@@ -299,24 +329,40 @@
       "collapsed": true,
       "gridPos": {"h": 1, "w": 24, "x": 0, "y": 9},
       "id": 209,
-      "title": "④ Workload — Generation Throughput (A100)",
+      "title": "④ Prefix Cache — A100",
       "type": "row",
       "panels": [
         {
           "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-          "description": "Generation 토큰 처리량 (tok/s).",
-          "fieldConfig": {"defaults": {"unit": "tps", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]}}, "overrides": []},
-          "gridPos": {"h": 4, "w": 4, "x": 0, "y": 10},
+          "description": "hit rate (left axis, 0~1) + queries/sec (right axis). queries 가 0 이면 hit rate 빈 시리즈 — 트래픽 없음 또는 prefix caching 비활성.",
+          "fieldConfig": {
+            "defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 5, "lineWidth": 1}},
+            "overrides": [
+              {
+                "matcher": {"id": "byFrameRefID", "options": "B"},
+                "properties": [
+                  {"id": "unit", "value": "reqps"},
+                  {"id": "max", "value": null},
+                  {"id": "custom.axisPlacement", "value": "right"},
+                  {"id": "custom.axisLabel", "value": "queries/sec"},
+                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
+                  {"id": "custom.lineStyle", "value": {"fill": "dash", "dash": [6, 4]}}
+                ]
+              }
+            ]
+          },
+          "gridPos": {"h": 6, "w": 8, "x": 0, "y": 10},
           "id": 10,
-          "maxPerRow": 6,
-          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "maxPerRow": 3,
+          "options": {"legend": {"displayMode": "list", "placement": "bottom", "calcs": []}, "tooltip": {"mode": "multi", "sort": "desc"}},
           "repeat": "model_a100",
           "repeatDirection": "h",
           "targets": [
-            {"expr": "sum(rate(vllm:generation_tokens_total{model=\"$model_a100\",accelerator=\"a100\"}[1m]))", "legendFormat": "tok/s", "refId": "A"}
+            {"expr": "rate(vllm:prefix_cache_hits{model=\"$model_a100\",accelerator=\"a100\"}[5m]) / rate(vllm:prefix_cache_queries{model=\"$model_a100\",accelerator=\"a100\"}[5m])", "legendFormat": "hit rate", "refId": "A"},
+            {"expr": "rate(vllm:prefix_cache_queries{model=\"$model_a100\",accelerator=\"a100\"}[5m])", "legendFormat": "queries/sec", "refId": "B"}
           ],
           "title": "${model_a100}",
-          "type": "stat"
+          "type": "timeseries"
         }
       ]
     },
@@ -324,24 +370,40 @@
       "collapsed": true,
       "gridPos": {"h": 1, "w": 24, "x": 0, "y": 10},
       "id": 210,
-      "title": "④ Workload — Generation Throughput (H100)",
+      "title": "④ Prefix Cache — H100",
       "type": "row",
       "panels": [
         {
           "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-          "description": "Generation 토큰 처리량 (tok/s).",
-          "fieldConfig": {"defaults": {"unit": "tps", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]}}, "overrides": []},
-          "gridPos": {"h": 4, "w": 4, "x": 0, "y": 11},
+          "description": "hit rate (left axis, 0~1) + queries/sec (right axis). queries 가 0 이면 hit rate 빈 시리즈 — 트래픽 없음 또는 prefix caching 비활성.",
+          "fieldConfig": {
+            "defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 5, "lineWidth": 1}},
+            "overrides": [
+              {
+                "matcher": {"id": "byFrameRefID", "options": "B"},
+                "properties": [
+                  {"id": "unit", "value": "reqps"},
+                  {"id": "max", "value": null},
+                  {"id": "custom.axisPlacement", "value": "right"},
+                  {"id": "custom.axisLabel", "value": "queries/sec"},
+                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
+                  {"id": "custom.lineStyle", "value": {"fill": "dash", "dash": [6, 4]}}
+                ]
+              }
+            ]
+          },
+          "gridPos": {"h": 6, "w": 8, "x": 0, "y": 11},
           "id": 11,
-          "maxPerRow": 6,
-          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "maxPerRow": 3,
+          "options": {"legend": {"displayMode": "list", "placement": "bottom", "calcs": []}, "tooltip": {"mode": "multi", "sort": "desc"}},
           "repeat": "model_h100",
           "repeatDirection": "h",
           "targets": [
-            {"expr": "sum(rate(vllm:generation_tokens_total{model=\"$model_h100\",accelerator=\"h100\"}[1m]))", "legendFormat": "tok/s", "refId": "A"}
+            {"expr": "rate(vllm:prefix_cache_hits{model=\"$model_h100\",accelerator=\"h100\"}[5m]) / rate(vllm:prefix_cache_queries{model=\"$model_h100\",accelerator=\"h100\"}[5m])", "legendFormat": "hit rate", "refId": "A"},
+            {"expr": "rate(vllm:prefix_cache_queries{model=\"$model_h100\",accelerator=\"h100\"}[5m])", "legendFormat": "queries/sec", "refId": "B"}
           ],
           "title": "${model_h100}",
-          "type": "stat"
+          "type": "timeseries"
         }
       ]
     },
@@ -349,24 +411,118 @@
       "collapsed": true,
       "gridPos": {"h": 1, "w": 24, "x": 0, "y": 11},
       "id": 211,
-      "title": "④ Workload — Generation Throughput (V100)",
+      "title": "④ Prefix Cache — V100",
       "type": "row",
       "panels": [
         {
           "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-          "description": "Generation 토큰 처리량 (tok/s).",
-          "fieldConfig": {"defaults": {"unit": "tps", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]}}, "overrides": []},
-          "gridPos": {"h": 4, "w": 4, "x": 0, "y": 12},
+          "description": "hit rate (left axis, 0~1) + queries/sec (right axis). queries 가 0 이면 hit rate 빈 시리즈 — 트래픽 없음 또는 prefix caching 비활성.",
+          "fieldConfig": {
+            "defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 5, "lineWidth": 1}},
+            "overrides": [
+              {
+                "matcher": {"id": "byFrameRefID", "options": "B"},
+                "properties": [
+                  {"id": "unit", "value": "reqps"},
+                  {"id": "max", "value": null},
+                  {"id": "custom.axisPlacement", "value": "right"},
+                  {"id": "custom.axisLabel", "value": "queries/sec"},
+                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
+                  {"id": "custom.lineStyle", "value": {"fill": "dash", "dash": [6, 4]}}
+                ]
+              }
+            ]
+          },
+          "gridPos": {"h": 6, "w": 8, "x": 0, "y": 12},
           "id": 12,
-          "maxPerRow": 6,
-          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "maxPerRow": 3,
+          "options": {"legend": {"displayMode": "list", "placement": "bottom", "calcs": []}, "tooltip": {"mode": "multi", "sort": "desc"}},
           "repeat": "model_v100",
           "repeatDirection": "h",
           "targets": [
-            {"expr": "sum(rate(vllm:generation_tokens_total{model=\"$model_v100\",accelerator=\"v100\"}[1m]))", "legendFormat": "tok/s", "refId": "A"}
+            {"expr": "rate(vllm:prefix_cache_hits{model=\"$model_v100\",accelerator=\"v100\"}[5m]) / rate(vllm:prefix_cache_queries{model=\"$model_v100\",accelerator=\"v100\"}[5m])", "legendFormat": "hit rate", "refId": "A"},
+            {"expr": "rate(vllm:prefix_cache_queries{model=\"$model_v100\",accelerator=\"v100\"}[5m])", "legendFormat": "queries/sec", "refId": "B"}
           ],
           "title": "${model_v100}",
-          "type": "stat"
+          "type": "timeseries"
+        }
+      ]
+    },
+    {
+      "collapsed": true,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 12},
+      "id": 212,
+      "title": "⑤ Prefill vs Decode — A100",
+      "type": "row",
+      "panels": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "description": "prefill / decode 단계 소요 시간 (선택 분위수)",
+          "fieldConfig": {"defaults": {"unit": "s", "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 5, "lineWidth": 1}}, "overrides": []},
+          "gridPos": {"h": 6, "w": 8, "x": 0, "y": 13},
+          "id": 13,
+          "maxPerRow": 3,
+          "options": {"legend": {"displayMode": "list", "placement": "bottom", "calcs": []}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "repeat": "model_a100",
+          "repeatDirection": "h",
+          "targets": [
+            {"expr": "histogram_quantile(${percentile:raw}, sum by (le) (rate(vllm:request_prefill_time_seconds_bucket{model=\"$model_a100\",accelerator=\"a100\"}[5m])))", "legendFormat": "prefill ${percentile:text}", "refId": "A"},
+            {"expr": "histogram_quantile(${percentile:raw}, sum by (le) (rate(vllm:request_decode_time_seconds_bucket{model=\"$model_a100\",accelerator=\"a100\"}[5m])))", "legendFormat": "decode ${percentile:text}", "refId": "B"}
+          ],
+          "title": "${model_a100}",
+          "type": "timeseries"
+        }
+      ]
+    },
+    {
+      "collapsed": true,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 13},
+      "id": 213,
+      "title": "⑤ Prefill vs Decode — H100",
+      "type": "row",
+      "panels": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "description": "prefill / decode 단계 소요 시간 (선택 분위수)",
+          "fieldConfig": {"defaults": {"unit": "s", "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 5, "lineWidth": 1}}, "overrides": []},
+          "gridPos": {"h": 6, "w": 8, "x": 0, "y": 14},
+          "id": 14,
+          "maxPerRow": 3,
+          "options": {"legend": {"displayMode": "list", "placement": "bottom", "calcs": []}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "repeat": "model_h100",
+          "repeatDirection": "h",
+          "targets": [
+            {"expr": "histogram_quantile(${percentile:raw}, sum by (le) (rate(vllm:request_prefill_time_seconds_bucket{model=\"$model_h100\",accelerator=\"h100\"}[5m])))", "legendFormat": "prefill ${percentile:text}", "refId": "A"},
+            {"expr": "histogram_quantile(${percentile:raw}, sum by (le) (rate(vllm:request_decode_time_seconds_bucket{model=\"$model_h100\",accelerator=\"h100\"}[5m])))", "legendFormat": "decode ${percentile:text}", "refId": "B"}
+          ],
+          "title": "${model_h100}",
+          "type": "timeseries"
+        }
+      ]
+    },
+    {
+      "collapsed": true,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 14},
+      "id": 214,
+      "title": "⑤ Prefill vs Decode — V100",
+      "type": "row",
+      "panels": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "description": "prefill / decode 단계 소요 시간 (선택 분위수)",
+          "fieldConfig": {"defaults": {"unit": "s", "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 5, "lineWidth": 1}}, "overrides": []},
+          "gridPos": {"h": 6, "w": 8, "x": 0, "y": 15},
+          "id": 15,
+          "maxPerRow": 3,
+          "options": {"legend": {"displayMode": "list", "placement": "bottom", "calcs": []}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "repeat": "model_v100",
+          "repeatDirection": "h",
+          "targets": [
+            {"expr": "histogram_quantile(${percentile:raw}, sum by (le) (rate(vllm:request_prefill_time_seconds_bucket{model=\"$model_v100\",accelerator=\"v100\"}[5m])))", "legendFormat": "prefill ${percentile:text}", "refId": "A"},
+            {"expr": "histogram_quantile(${percentile:raw}, sum by (le) (rate(vllm:request_decode_time_seconds_bucket{model=\"$model_v100\",accelerator=\"v100\"}[5m])))", "legendFormat": "decode ${percentile:text}", "refId": "B"}
+          ],
+          "title": "${model_v100}",
+          "type": "timeseries"
         }
       ]
     }
@@ -440,6 +596,24 @@
         "skipUrlSync": false,
         "sort": 1,
         "type": "query"
+      },
+      {
+        "current": {"selected": true, "text": "p95", "value": "0.95"},
+        "description": "Latency / Prefill·Decode 패널이 표시할 분위수.",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Percentile",
+        "multi": false,
+        "name": "percentile",
+        "options": [
+          {"selected": false, "text": "p50", "value": "0.50"},
+          {"selected": true, "text": "p95", "value": "0.95"},
+          {"selected": false, "text": "p99", "value": "0.99"}
+        ],
+        "query": "p50 : 0.50,p95 : 0.95,p99 : 0.99",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
       }
     ]
   },
