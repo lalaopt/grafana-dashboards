@@ -53,8 +53,11 @@ Grafana UI → Dashboards → Import → JSON 업로드 → Datasource 선택(Pr
 | `DS_PROMETHEUS` | Datasource 선택 |
 | `accelerator` (multi, All) | 모든 패널 PromQL 의 `{accelerator=~"$accelerator"}` 필터 |
 | `model` (multi, All, depends on `$accelerator`) | `{model=~"$model"}` 필터 |
+| `groupby` (custom, single) | latency 패널 5개의 시리즈 분리 키 — `(total)` / `accelerator` / `model` |
 
 기본 `All` 선택 시 전체 집계. 특정 가속기/모델로 좁히고 싶을 때 토글.
+
+**groupby 동작:** TTFT/TPOT/E2E/Queue Wait/Prefill+Decode 패널은 `sum by (le${groupby:raw}) (...)` 형태. variable 값이 빈 문자열이면 `sum by (le)` 로 전체 합산되고, `, accelerator` 이면 `sum by (le, accelerator)` 로 가속기별 분리. 모델 수십 개에서 `model` 로 분리하면 라인 폭발하니 주의.
 
 ### `vllm-per-model.json`
 | 변수 | 동작 |
