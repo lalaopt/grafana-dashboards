@@ -47,11 +47,9 @@
       "id": 1,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
-        {"expr": "histogram_quantile(0.50, sum by (le${groupby:raw}) (rate(vllm:time_to_first_token_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "p50 {{accelerator}}{{model}}", "refId": "A"},
-        {"expr": "histogram_quantile(0.95, sum by (le${groupby:raw}) (rate(vllm:time_to_first_token_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "p95 {{accelerator}}{{model}}", "refId": "B"},
-        {"expr": "histogram_quantile(0.99, sum by (le${groupby:raw}) (rate(vllm:time_to_first_token_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "p99 {{accelerator}}{{model}}", "refId": "C"}
+        {"expr": "histogram_quantile(${percentile:raw}, sum by (le${groupby:raw}) (rate(vllm:time_to_first_token_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "${percentile:text} {{accelerator}}{{model}}", "refId": "A"}
       ],
-      "title": "TTFT (p50 / p95 / p99)",
+      "title": "TTFT (${percentile:text})",
       "type": "timeseries"
     },
     {
@@ -62,11 +60,9 @@
       "id": 2,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
-        {"expr": "histogram_quantile(0.50, sum by (le${groupby:raw}) (rate(vllm:inter_token_latency_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "p50 {{accelerator}}{{model}}", "refId": "A"},
-        {"expr": "histogram_quantile(0.95, sum by (le${groupby:raw}) (rate(vllm:inter_token_latency_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "p95 {{accelerator}}{{model}}", "refId": "B"},
-        {"expr": "histogram_quantile(0.99, sum by (le${groupby:raw}) (rate(vllm:inter_token_latency_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "p99 {{accelerator}}{{model}}", "refId": "C"}
+        {"expr": "histogram_quantile(${percentile:raw}, sum by (le${groupby:raw}) (rate(vllm:inter_token_latency_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "${percentile:text} {{accelerator}}{{model}}", "refId": "A"}
       ],
-      "title": "TPOT (p50 / p95 / p99)",
+      "title": "TPOT (${percentile:text})",
       "type": "timeseries"
     },
     {
@@ -77,11 +73,9 @@
       "id": 3,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
-        {"expr": "histogram_quantile(0.50, sum by (le${groupby:raw}) (rate(vllm:e2e_request_latency_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "p50 {{accelerator}}{{model}}", "refId": "A"},
-        {"expr": "histogram_quantile(0.95, sum by (le${groupby:raw}) (rate(vllm:e2e_request_latency_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "p95 {{accelerator}}{{model}}", "refId": "B"},
-        {"expr": "histogram_quantile(0.99, sum by (le${groupby:raw}) (rate(vllm:e2e_request_latency_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "p99 {{accelerator}}{{model}}", "refId": "C"}
+        {"expr": "histogram_quantile(${percentile:raw}, sum by (le${groupby:raw}) (rate(vllm:e2e_request_latency_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "${percentile:text} {{accelerator}}{{model}}", "refId": "A"}
       ],
-      "title": "E2E Request Latency (p50 / p95 / p99)",
+      "title": "E2E Request Latency (${percentile:text})",
       "type": "timeseries"
     },
     {
@@ -171,9 +165,9 @@
       "id": 8,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
-        {"expr": "histogram_quantile(0.95, sum by (le${groupby:raw}) (rate(vllm:request_queue_time_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "queue p95 {{accelerator}}{{model}}", "refId": "A"}
+        {"expr": "histogram_quantile(${percentile:raw}, sum by (le${groupby:raw}) (rate(vllm:request_queue_time_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "queue ${percentile:text} {{accelerator}}{{model}}", "refId": "A"}
       ],
-      "title": "Queue Wait Time p95",
+      "title": "Queue Wait Time (${percentile:text})",
       "type": "timeseries"
     },
     {
@@ -184,10 +178,10 @@
       "id": 9,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
-        {"expr": "histogram_quantile(0.95, sum by (le${groupby:raw}) (rate(vllm:request_prefill_time_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "prefill p95 {{accelerator}}{{model}}", "refId": "A"},
-        {"expr": "histogram_quantile(0.95, sum by (le${groupby:raw}) (rate(vllm:request_decode_time_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "decode p95 {{accelerator}}{{model}}", "refId": "B"}
+        {"expr": "histogram_quantile(${percentile:raw}, sum by (le${groupby:raw}) (rate(vllm:request_prefill_time_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "prefill ${percentile:text} {{accelerator}}{{model}}", "refId": "A"},
+        {"expr": "histogram_quantile(${percentile:raw}, sum by (le${groupby:raw}) (rate(vllm:request_decode_time_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "decode ${percentile:text} {{accelerator}}{{model}}", "refId": "B"}
       ],
-      "title": "Prefill vs Decode p95",
+      "title": "Prefill vs Decode (${percentile:text})",
       "type": "timeseries"
     },
     {
@@ -356,7 +350,7 @@
       },
       {
         "current": {"selected": true, "text": "(total)", "value": ""},
-        "description": "Latency 패널들을 어떤 라벨로 그룹 나눌지. (total) 은 전체 합산.",
+        "description": "패널 시리즈 그룹화 라벨. model 은 가속기 정보를 잃어 모호하므로 'model + accelerator' 만 제공.",
         "hide": 0,
         "includeAll": false,
         "label": "Group by",
@@ -365,9 +359,27 @@
         "options": [
           {"selected": true, "text": "(total)", "value": ""},
           {"selected": false, "text": "accelerator", "value": ", accelerator"},
-          {"selected": false, "text": "model", "value": ", model"}
+          {"selected": false, "text": "model + accelerator", "value": ", model, accelerator"}
         ],
-        "query": "(total) : ,accelerator : \\, accelerator,model : \\, model",
+        "query": "(total) : ,accelerator : \\, accelerator,model + accelerator : \\, model\\, accelerator",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {"selected": true, "text": "p95", "value": "0.95"},
+        "description": "TTFT/TPOT/E2E/Queue Wait/Prefill+Decode 패널이 표시할 분위수. group-by 와 결합해 시리즈 폭발 방지.",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Percentile",
+        "multi": false,
+        "name": "percentile",
+        "options": [
+          {"selected": false, "text": "p50", "value": "0.50"},
+          {"selected": true, "text": "p95", "value": "0.95"},
+          {"selected": false, "text": "p99", "value": "0.99"}
+        ],
+        "query": "p50 : 0.50,p95 : 0.95,p99 : 0.99",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
