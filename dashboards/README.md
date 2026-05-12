@@ -101,14 +101,14 @@ variable value 인코딩: `(total)` → `""`, `accelerator` → `", accelerator"
 
 ## Overview 대시보드 — 패널 선택 근거
 
+**뷰 분류 원칙**: Aggregation 은 클러스터/가속기 관점의 SLO·정상성·압력 신호 중심. Throughput(prompt/gen tok/s) 같이 모델 워크로드가 매우 다양해서 합산 의미가 약한 메트릭은 Per-Model 로만. Prefix Cache 와 Workload heatmap 은 클러스터 관점도 의미 있어 양쪽 유지.
+
 | Row | 패널 | 시각화 | 이유 |
 |-----|------|--------|------|
 | ① SLO | TTFT (선택 분위수) | timeseries (group-by + percentile 토글) | 사용자 체감 첫 토큰 지연. avg 대신 분위수로 tail latency 가시화. 분위수 1개 × 그룹 라인 — 라인 폭발 방지. |
 | ① SLO | TPOT (선택 분위수) | timeseries (group-by + percentile 토글) | 스트리밍 시 토큰 간 지연. tail 이 사용자 체감 가장 직접 영향. |
 | ① SLO | E2E Latency (선택 분위수) | timeseries (group-by + percentile 토글) | 전체 요청 처리 시간. 단순 비교 KPI. |
-| ① SLO | Prompt Throughput | timeseries (group-by 토글) | **prompt** = 사용자가 vLLM 에 보낸 입력 토큰 수. prefill 단계의 throughput. |
-| ① SLO | Generation Throughput | timeseries (group-by 토글) | **generation** = vLLM 이 생성해낸 출력 토큰 수. decode 단계의 throughput. 두 값의 비율은 워크로드 특성(요약/코드생성 등)을 나타냄. |
-| ① SLO | Request Completion Rate | timeseries (stacked, group-by 토글) | finished_reason(stop/length/abort) 비율 시간변화. group-by 시 finished_reason × 그룹 라인. |
+| ① SLO | Request Completion Rate | timeseries (stacked, full-width, group-by 토글) | finished_reason(stop/length/abort) 비율 시간변화. group-by 시 finished_reason × 그룹 라인. 클러스터 정상성 핵심 지표라 full-width. |
 | ② System | Concurrency | timeseries (stacked area, group-by 토글) | running + waiting 누적. group-by 시 가속기별 running/waiting 분리. |
 | ② System | KV Cache Usage + Waiting | timeseries (avg/max + dashed waiting, group-by 토글) | avg/max 만 보면 한계 도달 여부만. waiting 큐 길이를 이중 축으로 같이 그려 "사용률 높고 waiting 도 늘면 실질 압력" 컨텍스트. group-by 시 가속기/모델별 avg·max·waiting. |
 | ② System | Queue Wait (선택 분위수) | timeseries (group-by + percentile 토글) | 큐 대기 자체가 SLO 침해 신호. |
@@ -117,7 +117,7 @@ variable value 인코딩: `(total)` → `""`, `accelerator` → `", accelerator"
 | ④ Workload | Prompt Token Length | heatmap (group-by 토글) | 입력 길이 분포. histogram 메트릭이라 heatmap 자연스러움. group-by 시 multi-series row 분리. |
 | ④ Workload | Generation Token Length | heatmap (group-by 토글) | 출력 길이 분포. |
 | ④ Workload | Finish Reason Ratio | donut (group-by 토글) | 종료 이유 비율을 한눈에. abort 가 보이면 위험 신호. group-by 시 finished_reason × 그룹 곱한 slice. |
-| ④ Workload | Throughput Share by Accelerator | donut | 가속기 간 부하 분산 비율. 자체 accelerator 분리라 group-by 미적용. |
+| ④ Workload | Generation Throughput Share by Accelerator | donut | 가속기 간 부하 분산 비율 (generation tok/s 기준). 자체 accelerator 분리라 group-by 미적용. |
 
 ---
 

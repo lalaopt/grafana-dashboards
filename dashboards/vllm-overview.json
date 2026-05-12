@@ -36,7 +36,7 @@
       "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
       "id": 100,
       "panels": [],
-      "title": "① SLO & Throughput",
+      "title": "① SLO",
       "type": "row"
     },
     {
@@ -80,35 +80,9 @@
     },
     {
       "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-      "description": "Prompt(입력) 토큰 처리량 (tok/s). prefill 단계의 throughput.",
-      "fieldConfig": {"defaults": {"unit": "tps", "color": {"mode": "palette-classic"}}, "overrides": []},
-      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 9},
-      "id": 4,
-      "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
-      "targets": [
-        {"expr": "sum by (__name__${groupby:raw}) (rate(vllm:prompt_tokens_total{model=~\"$model\",accelerator=~\"$accelerator\"}[1m]))", "legendFormat": "{{model}} ({{accelerator}})", "refId": "A"}
-      ],
-      "title": "Prompt Throughput (tok/s)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-      "description": "Generation(출력) 토큰 처리량 (tok/s). decode 단계의 throughput.",
-      "fieldConfig": {"defaults": {"unit": "tps", "color": {"mode": "palette-classic"}}, "overrides": []},
-      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 9},
-      "id": 20,
-      "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
-      "targets": [
-        {"expr": "sum by (__name__${groupby:raw}) (rate(vllm:generation_tokens_total{model=~\"$model\",accelerator=~\"$accelerator\"}[1m]))", "legendFormat": "{{model}} ({{accelerator}})", "refId": "A"}
-      ],
-      "title": "Generation Throughput (tok/s)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-      "description": "요청 완료 rate (finished_reason 별).",
+      "description": "요청 완료 rate (finished_reason 별). 클러스터 정상성 지표 — abort 비율 급증 시 즉시 인지.",
       "fieldConfig": {"defaults": {"unit": "reqps", "color": {"mode": "palette-classic"}, "custom": {"stacking": {"mode": "normal", "group": "A"}}}, "overrides": []},
-      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 9},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 9},
       "id": 5,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
@@ -289,7 +263,7 @@
       "targets": [
         {"expr": "sum by (accelerator) (rate(vllm:generation_tokens_total{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "legendFormat": "{{accelerator}}", "refId": "A"}
       ],
-      "title": "Throughput Share by Accelerator",
+      "title": "Generation Throughput Share by Accelerator",
       "type": "piechart"
     }
   ],
