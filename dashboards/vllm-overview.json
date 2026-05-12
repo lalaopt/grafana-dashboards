@@ -135,16 +135,32 @@
     },
     {
       "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-      "description": "KV 캐시 사용률 — 모델 평균 vs 최댓값.",
-      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 10}}, "overrides": []},
+      "description": "KV 캐시 사용률(avg/max) + waiting 큐 길이 보조선. 사용률이 높으면서 waiting 이 같이 오르면 실질 KV 압력.",
+      "fieldConfig": {
+        "defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 10}},
+        "overrides": [
+          {
+            "matcher": {"id": "byFrameRefID", "options": "C"},
+            "properties": [
+              {"id": "unit", "value": "short"},
+              {"id": "custom.axisPlacement", "value": "right"},
+              {"id": "custom.axisLabel", "value": "waiting"},
+              {"id": "max", "value": null},
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}},
+              {"id": "custom.lineStyle", "value": {"fill": "dash", "dash": [6, 4]}}
+            ]
+          }
+        ]
+      },
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 18},
       "id": 7,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
         {"expr": "avg(vllm:kv_cache_usage_perc{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "avg", "refId": "A"},
-        {"expr": "max(vllm:kv_cache_usage_perc{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "max", "refId": "B"}
+        {"expr": "max(vllm:kv_cache_usage_perc{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "max", "refId": "B"},
+        {"expr": "sum(vllm:num_requests_waiting{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "waiting", "refId": "C"}
       ],
-      "title": "KV Cache Usage (avg / max)",
+      "title": "KV Cache Usage (avg / max) + Waiting",
       "type": "timeseries"
     },
     {
@@ -197,15 +213,31 @@
     },
     {
       "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-      "description": "Prefix cache hit rate = rate(hits) / rate(queries).",
-      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 10}}, "overrides": []},
+      "description": "Prefix cache hit rate + queries/sec 보조선. queries 가 0 이면 hit rate 빈 시리즈가 정상(트래픽 없음 또는 prefix caching 비활성).",
+      "fieldConfig": {
+        "defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 10}},
+        "overrides": [
+          {
+            "matcher": {"id": "byFrameRefID", "options": "B"},
+            "properties": [
+              {"id": "unit", "value": "reqps"},
+              {"id": "custom.axisPlacement", "value": "right"},
+              {"id": "custom.axisLabel", "value": "queries/sec"},
+              {"id": "max", "value": null},
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
+              {"id": "custom.lineStyle", "value": {"fill": "dash", "dash": [6, 4]}}
+            ]
+          }
+        ]
+      },
       "gridPos": {"h": 8, "w": 24, "x": 0, "y": 35},
       "id": 11,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "lastNotNull"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
-        {"expr": "sum(rate(vllm:prefix_cache_hits{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])) / sum(rate(vllm:prefix_cache_queries{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "legendFormat": "hit rate", "refId": "A"}
+        {"expr": "sum(rate(vllm:prefix_cache_hits{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])) / sum(rate(vllm:prefix_cache_queries{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "legendFormat": "hit rate", "refId": "A"},
+        {"expr": "sum(rate(vllm:prefix_cache_queries{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "legendFormat": "queries/sec", "refId": "B"}
       ],
-      "title": "Prefix Cache Hit Rate",
+      "title": "Prefix Cache Hit Rate + Queries/sec",
       "type": "timeseries"
     },
     {

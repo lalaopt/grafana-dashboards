@@ -89,11 +89,11 @@ Grafana UI → Dashboards → Import → JSON 업로드 → Datasource 선택(Pr
 | ① SLO | Token Throughput | timeseries (2-line) | prompt vs gen 토큰 처리량을 동시에. 색 다르게. |
 | ① SLO | Request Completion Rate | timeseries (stacked) | finished_reason(stop/length/abort) 비율 시간변화. abort 가 급증하면 즉시 인지. |
 | ② System | Concurrency | timeseries (stacked area) | running + waiting 누적. waiting 이 크면 처리 한계. |
-| ② System | KV Cache Usage | timeseries (avg/max) | avg 는 클러스터 압력, max 는 어느 모델이 한계 근접. |
+| ② System | KV Cache Usage + Waiting | timeseries (avg/max + 보조 dashed line) | avg/max 만 보면 한계 도달 여부만 알 수 있음. waiting 큐 길이를 이중 축으로 같이 그려 "사용률 높고 waiting 도 늘면 실질 압력" 컨텍스트 제공. |
 | ② System | Queue Wait p95 | timeseries (single) | 큐 대기 자체가 SLO 침해 신호. |
 | ② System | Prefill vs Decode p95 | timeseries (2-line) | 어느 단계가 병목인지 분리해서 본다. |
 | ② System | Active Deployments | stat | 현재 운영 중인 모델×가속기 조합 수. 상황 파악용. |
-| ③ Prefix Cache | Prefix Cache Hit Rate | timeseries (full width) | 0~1 비율. PromQL 에서 rate(hits)/rate(queries) 로 계산. |
+| ③ Prefix Cache | Prefix Cache Hit Rate + Queries/sec | timeseries (full width, dual axis) | hit rate 단독은 분모 0(트래픽 없음/prefix caching 비활성) 시 NaN 으로 빈 시리즈 → 원인 불분명. queries/sec 보조선을 함께 그려서 0/0 상황을 시각적으로 즉시 구분. |
 | ④ Workload | Prompt Token Length | heatmap | 입력 길이 분포. histogram 메트릭이라 heatmap 자연스러움. |
 | ④ Workload | Generation Token Length | heatmap | 출력 길이 분포. |
 | ④ Workload | Finish Reason Ratio | donut | 종료 이유 비율을 한눈에. abort 가 보이면 위험 신호. |
@@ -108,8 +108,8 @@ Grafana UI → Dashboards → Import → JSON 업로드 → Datasource 선택(Pr
 | Row | 패널 | 시각화 | 임계값 | 이유 |
 |-----|------|--------|--------|------|
 | ① SLO | TTFT p95 | stat + area sparkline | 1s 주의, 3s 위험 | p95 한 숫자 + 추세. 색으로 위험 모델 즉시 식별. |
-| ② System | KV Cache % | gauge | 70% 주의, 90% 위험 | 0~1 범위. gauge 가 한계 시각적으로 직관. |
-| ③ KV cache | Prefix Hit Rate | stat + area sparkline | <20% 위험(red), ≥50% 좋음(green) | 높을수록 좋음이라 임계값 색 반전. |
+| ② System | KV Cache % | stat + area sparkline | 70% 주의(yellow), 90% 위험(red) | gauge 는 현재값만 보여서 burst 를 놓침. stat + area sparkline 으로 현재값과 추세를 한 셀에. 임계 색은 thresholds 로 유지. |
+| ③ KV cache | Prefix Hit% · Queries/sec | dual-value stat (vertical) | hit% <20% 위험(red), ≥50% 좋음(green); queries/sec 는 색 없음 | hit% 만 표시하면 queries=0 일 때 NaN 으로 "No data" 가 떠서 노 트래픽인지 패널 버그인지 헷갈림. queries/sec 를 같이 보여 0/0 상황을 직접 노출. |
 | ④ Workload | Gen Throughput | stat + area sparkline | (단색 blue) | 절대값 비교용. 임계값 없음. |
 
 패널 규격: `gridPos.w=4, h=4`, `maxPerRow=6`, `repeatDirection=horizontal`. 24-wide 그리드에 6 panel/줄. 30개 모델이면 5줄.

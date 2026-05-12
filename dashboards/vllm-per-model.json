@@ -120,14 +120,14 @@
           "gridPos": {"h": 4, "w": 4, "x": 0, "y": 4},
           "id": 4,
           "maxPerRow": 6,
-          "options": {"orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "showThresholdLabels": false, "showThresholdMarkers": true},
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
           "repeat": "model_a100",
           "repeatDirection": "h",
           "targets": [
             {"expr": "vllm:kv_cache_usage_perc{model=\"$model_a100\",accelerator=\"a100\"}", "legendFormat": "kv%", "refId": "A"}
           ],
           "title": "${model_a100}",
-          "type": "gauge"
+          "type": "stat"
         }
       ]
     },
@@ -145,14 +145,14 @@
           "gridPos": {"h": 4, "w": 4, "x": 0, "y": 5},
           "id": 5,
           "maxPerRow": 6,
-          "options": {"orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "showThresholdLabels": false, "showThresholdMarkers": true},
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
           "repeat": "model_h100",
           "repeatDirection": "h",
           "targets": [
             {"expr": "vllm:kv_cache_usage_perc{model=\"$model_h100\",accelerator=\"h100\"}", "legendFormat": "kv%", "refId": "A"}
           ],
           "title": "${model_h100}",
-          "type": "gauge"
+          "type": "stat"
         }
       ]
     },
@@ -170,14 +170,14 @@
           "gridPos": {"h": 4, "w": 4, "x": 0, "y": 6},
           "id": 6,
           "maxPerRow": 6,
-          "options": {"orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "showThresholdLabels": false, "showThresholdMarkers": true},
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
           "repeat": "model_v100",
           "repeatDirection": "h",
           "targets": [
             {"expr": "vllm:kv_cache_usage_perc{model=\"$model_v100\",accelerator=\"v100\"}", "legendFormat": "kv%", "refId": "A"}
           ],
           "title": "${model_v100}",
-          "type": "gauge"
+          "type": "stat"
         }
       ]
     },
@@ -190,16 +190,29 @@
       "panels": [
         {
           "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-          "description": "Prefix cache hit rate. 높을수록 좋음.",
-          "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.2}, {"color": "green", "value": 0.5}]}}, "overrides": []},
+          "description": "Prefix cache hit% + queries/sec 동시 표시. queries 가 0 이면 hit% 는 NaN (트래픽 없음 또는 prefix caching 비활성 신호).",
+          "fieldConfig": {
+            "defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.2}, {"color": "green", "value": 0.5}]}},
+            "overrides": [
+              {
+                "matcher": {"id": "byFrameRefID", "options": "B"},
+                "properties": [
+                  {"id": "unit", "value": "reqps"},
+                  {"id": "max", "value": null},
+                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}
+                ]
+              }
+            ]
+          },
           "gridPos": {"h": 4, "w": 4, "x": 0, "y": 7},
           "id": 7,
           "maxPerRow": 6,
-          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "center", "orientation": "vertical", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name"},
           "repeat": "model_a100",
           "repeatDirection": "h",
           "targets": [
-            {"expr": "rate(vllm:prefix_cache_hits{model=\"$model_a100\",accelerator=\"a100\"}[5m]) / rate(vllm:prefix_cache_queries{model=\"$model_a100\",accelerator=\"a100\"}[5m])", "legendFormat": "hit%", "refId": "A"}
+            {"expr": "rate(vllm:prefix_cache_hits{model=\"$model_a100\",accelerator=\"a100\"}[5m]) / rate(vllm:prefix_cache_queries{model=\"$model_a100\",accelerator=\"a100\"}[5m])", "legendFormat": "hit%", "refId": "A"},
+            {"expr": "rate(vllm:prefix_cache_queries{model=\"$model_a100\",accelerator=\"a100\"}[5m])", "legendFormat": "q/s", "refId": "B"}
           ],
           "title": "${model_a100}",
           "type": "stat"
@@ -215,16 +228,29 @@
       "panels": [
         {
           "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-          "description": "Prefix cache hit rate. 높을수록 좋음.",
-          "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.2}, {"color": "green", "value": 0.5}]}}, "overrides": []},
+          "description": "Prefix cache hit% + queries/sec 동시 표시. queries 가 0 이면 hit% 는 NaN (트래픽 없음 또는 prefix caching 비활성 신호).",
+          "fieldConfig": {
+            "defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.2}, {"color": "green", "value": 0.5}]}},
+            "overrides": [
+              {
+                "matcher": {"id": "byFrameRefID", "options": "B"},
+                "properties": [
+                  {"id": "unit", "value": "reqps"},
+                  {"id": "max", "value": null},
+                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}
+                ]
+              }
+            ]
+          },
           "gridPos": {"h": 4, "w": 4, "x": 0, "y": 8},
           "id": 8,
           "maxPerRow": 6,
-          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "center", "orientation": "vertical", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name"},
           "repeat": "model_h100",
           "repeatDirection": "h",
           "targets": [
-            {"expr": "rate(vllm:prefix_cache_hits{model=\"$model_h100\",accelerator=\"h100\"}[5m]) / rate(vllm:prefix_cache_queries{model=\"$model_h100\",accelerator=\"h100\"}[5m])", "legendFormat": "hit%", "refId": "A"}
+            {"expr": "rate(vllm:prefix_cache_hits{model=\"$model_h100\",accelerator=\"h100\"}[5m]) / rate(vllm:prefix_cache_queries{model=\"$model_h100\",accelerator=\"h100\"}[5m])", "legendFormat": "hit%", "refId": "A"},
+            {"expr": "rate(vllm:prefix_cache_queries{model=\"$model_h100\",accelerator=\"h100\"}[5m])", "legendFormat": "q/s", "refId": "B"}
           ],
           "title": "${model_h100}",
           "type": "stat"
@@ -240,16 +266,29 @@
       "panels": [
         {
           "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-          "description": "Prefix cache hit rate. 높을수록 좋음.",
-          "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.2}, {"color": "green", "value": 0.5}]}}, "overrides": []},
+          "description": "Prefix cache hit% + queries/sec 동시 표시. queries 가 0 이면 hit% 는 NaN (트래픽 없음 또는 prefix caching 비활성 신호).",
+          "fieldConfig": {
+            "defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.2}, {"color": "green", "value": 0.5}]}},
+            "overrides": [
+              {
+                "matcher": {"id": "byFrameRefID", "options": "B"},
+                "properties": [
+                  {"id": "unit", "value": "reqps"},
+                  {"id": "max", "value": null},
+                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}
+                ]
+              }
+            ]
+          },
           "gridPos": {"h": 4, "w": 4, "x": 0, "y": 9},
           "id": 9,
           "maxPerRow": 6,
-          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "center", "orientation": "vertical", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name"},
           "repeat": "model_v100",
           "repeatDirection": "h",
           "targets": [
-            {"expr": "rate(vllm:prefix_cache_hits{model=\"$model_v100\",accelerator=\"v100\"}[5m]) / rate(vllm:prefix_cache_queries{model=\"$model_v100\",accelerator=\"v100\"}[5m])", "legendFormat": "hit%", "refId": "A"}
+            {"expr": "rate(vllm:prefix_cache_hits{model=\"$model_v100\",accelerator=\"v100\"}[5m]) / rate(vllm:prefix_cache_queries{model=\"$model_v100\",accelerator=\"v100\"}[5m])", "legendFormat": "hit%", "refId": "A"},
+            {"expr": "rate(vllm:prefix_cache_queries{model=\"$model_v100\",accelerator=\"v100\"}[5m])", "legendFormat": "q/s", "refId": "B"}
           ],
           "title": "${model_v100}",
           "type": "stat"
