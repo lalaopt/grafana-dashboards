@@ -57,14 +57,16 @@ Grafana UI → Dashboards → Import → JSON 업로드 → Datasource 선택(Pr
 
 기본 `All` 선택 시 전체 집계. 특정 가속기/모델로 좁히고 싶을 때 토글.
 
-**groupby 동작:** Overview 의 10개 timeseries 패널이 모두 영향을 받는다.
+**groupby 동작:** Overview 의 timeseries/heatmap/piechart 13개 패널 중 12개가 영향을 받는다. 예외는 "Throughput Share by Accelerator" donut(자체 accelerator 분리), "Active Deployments" stat(그룹 의미 약함).
 
-- Histogram 패널(TTFT/TPOT/E2E/Queue Wait/Prefill+Decode): `sum by (le${groupby:raw}) (rate(..._bucket[5m]))` — `le` 는 분위수 계산에 필수, group-by 라벨이 거기에 추가됨.
-- Counter/Instant 패널(Throughput/Completion/Concurrency/KV Usage/Prefix Hit Rate): `sum by (__name__${groupby:raw}) (...)` — `__name__` 는 메트릭당 동일하므로 합산 결과 단일 시리즈 보존용 dummy. group-by 라벨이 거기에 추가되면 그 라벨별로 시리즈 분리.
+- Histogram (timeseries): `sum by (le${groupby:raw}) (rate(..._bucket[5m]))` — `le` 는 분위수 계산에 필수, group-by 라벨이 거기에 추가됨. TTFT/TPOT/E2E/Queue Wait/Prefill+Decode 5개.
+- Counter/Instant (timeseries): `sum by (__name__${groupby:raw}) (...)` — `__name__` 는 메트릭당 동일하므로 합산 결과 단일 시리즈 보존용 dummy. group-by 라벨이 거기에 추가되면 그 라벨별로 시리즈 분리. Throughput/Completion/Concurrency/KV Usage/Prefix Hit Rate 5개.
+- Heatmap (workload 분포): `sum by (le${groupby:raw}) (...)` — (total) 이 아닐 때 multi-series heatmap 이 되어 Grafana 가 시리즈별 row 분리 시각화. 시각이 복잡해질 수 있어 `(total)` 권장.
+- Piechart (Finish Reason): `sum by (finished_reason${groupby:raw}) (...)` — group-by 시 slice 수 (finished_reason × 그룹) 곱 증가.
 
 variable value 인코딩: `(total)` → `""`, `accelerator` → `", accelerator"`, `model` → `", model"`. PromQL 표현식에 그대로 삽입되므로 trailing/empty grouping 문법 오류 없음.
 
-모델 수십 개에서 `model` 로 분리하면 라인 폭발하니 주의.
+모델 수십 개에서 `model` 로 분리하면 라인/slice 폭발하니 주의.
 
 ### `vllm-per-model.json`
 | 변수 | 동작 |
@@ -104,10 +106,10 @@ variable value 인코딩: `(total)` → `""`, `accelerator` → `", accelerator"
 | ② System | Prefill vs Decode p95 | timeseries (2-line, group-by 토글) | 어느 단계가 병목인지 분리해서 본다. |
 | ② System | Active Deployments | stat | 현재 운영 중인 모델×가속기 조합 수. 상황 파악용. |
 | ③ Prefix Cache | Prefix Cache Hit Rate + Queries/sec | timeseries (full width, dual axis, group-by 토글) | hit rate 단독은 분모 0(트래픽 없음/prefix caching 비활성) 시 NaN 으로 빈 시리즈 → 원인 불분명. queries/sec 보조선을 함께 그려서 0/0 상황을 시각적으로 즉시 구분. group-by 시 그룹별 hit rate 와 queries/sec 분리. |
-| ④ Workload | Prompt Token Length | heatmap | 입력 길이 분포. histogram 메트릭이라 heatmap 자연스러움. |
-| ④ Workload | Generation Token Length | heatmap | 출력 길이 분포. |
-| ④ Workload | Finish Reason Ratio | donut | 종료 이유 비율을 한눈에. abort 가 보이면 위험 신호. |
-| ④ Workload | Throughput Share by Accelerator | donut | 가속기 간 부하 분산 비율. |
+| ④ Workload | Prompt Token Length | heatmap (group-by 토글) | 입력 길이 분포. histogram 메트릭이라 heatmap 자연스러움. group-by 시 multi-series row 분리. |
+| ④ Workload | Generation Token Length | heatmap (group-by 토글) | 출력 길이 분포. |
+| ④ Workload | Finish Reason Ratio | donut (group-by 토글) | 종료 이유 비율을 한눈에. abort 가 보이면 위험 신호. group-by 시 finished_reason × 그룹 곱한 slice. |
+| ④ Workload | Throughput Share by Accelerator | donut | 가속기 간 부하 분산 비율. 자체 accelerator 분리라 group-by 미적용. |
 
 ---
 

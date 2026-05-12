@@ -256,7 +256,7 @@
       "id": 15,
       "options": {"calculate": false, "cellGap": 1, "color": {"exponent": 0.5, "fill": "dark-orange", "mode": "scheme", "reverse": false, "scale": "exponential", "scheme": "Greens", "steps": 64}, "exemplars": {"color": "rgba(255,0,255,0.7)"}, "filterValues": {"le": 1e-9}, "legend": {"show": true}, "rowsFrame": {"layout": "auto"}, "tooltip": {"show": true, "yHistogram": false}, "yAxis": {"axisPlacement": "left", "reverse": false, "unit": "short"}},
       "targets": [
-        {"expr": "sum by (le) (rate(vllm:request_prompt_tokens_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "format": "heatmap", "legendFormat": "{{le}}", "refId": "A"}
+        {"expr": "sum by (le${groupby:raw}) (rate(vllm:request_prompt_tokens_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "format": "heatmap", "legendFormat": "{{le}} {{accelerator}}{{model}}", "refId": "A"}
       ],
       "title": "Prompt Token Length Distribution",
       "type": "heatmap"
@@ -269,7 +269,7 @@
       "id": 16,
       "options": {"calculate": false, "cellGap": 1, "color": {"exponent": 0.5, "fill": "dark-orange", "mode": "scheme", "reverse": false, "scale": "exponential", "scheme": "Reds", "steps": 64}, "exemplars": {"color": "rgba(255,0,255,0.7)"}, "filterValues": {"le": 1e-9}, "legend": {"show": true}, "rowsFrame": {"layout": "auto"}, "tooltip": {"show": true, "yHistogram": false}, "yAxis": {"axisPlacement": "left", "reverse": false, "unit": "short"}},
       "targets": [
-        {"expr": "sum by (le) (rate(vllm:request_generation_tokens_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "format": "heatmap", "legendFormat": "{{le}}", "refId": "A"}
+        {"expr": "sum by (le${groupby:raw}) (rate(vllm:request_generation_tokens_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "format": "heatmap", "legendFormat": "{{le}} {{accelerator}}{{model}}", "refId": "A"}
       ],
       "title": "Generation Token Length Distribution",
       "type": "heatmap"
@@ -282,7 +282,7 @@
       "id": 17,
       "options": {"legend": {"displayMode": "list", "placement": "right", "values": ["percent"]}, "pieType": "donut", "reduceOptions": {"calcs": ["sum"], "fields": "", "values": false}, "tooltip": {"mode": "single", "sort": "none"}},
       "targets": [
-        {"expr": "sum by (finished_reason) (increase(vllm:request_success_total{model=~\"$model\",accelerator=~\"$accelerator\"}[$__range]))", "legendFormat": "{{finished_reason}}", "refId": "A"}
+        {"expr": "sum by (finished_reason${groupby:raw}) (increase(vllm:request_success_total{model=~\"$model\",accelerator=~\"$accelerator\"}[$__range]))", "legendFormat": "{{finished_reason}} {{accelerator}}{{model}}", "refId": "A"}
       ],
       "title": "Finish Reason Ratio",
       "type": "piechart"
