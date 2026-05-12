@@ -83,15 +83,15 @@ Grafana UI → Dashboards → Import → JSON 업로드 → Datasource 선택(Pr
 
 | Row | 패널 | 시각화 | 이유 |
 |-----|------|--------|------|
-| ① SLO | TTFT (p50/p95/p99) | timeseries (3-line) | 사용자 체감 지연. avg 대신 분위수로 tail latency 가시화. |
-| ① SLO | TPOT (p50/p95/p99) | timeseries (3-line) | 스트리밍 시 토큰 간 지연. tail 이 사용자 체감 가장 직접 영향. |
-| ① SLO | E2E Latency (p50/p95/p99) | timeseries (3-line) | 전체 요청 처리 시간. 단순 비교 KPI. |
-| ① SLO | Token Throughput | timeseries (2-line) | prompt vs gen 토큰 처리량을 동시에. 색 다르게. |
+| ① SLO | TTFT (p50/p95/p99) | timeseries (3-line, group-by 토글) | 사용자 체감 지연. avg 대신 분위수로 tail latency 가시화. `groupby` 변수로 가속기/모델별 분리 가능. |
+| ① SLO | TPOT (p50/p95/p99) | timeseries (3-line, group-by 토글) | 스트리밍 시 토큰 간 지연. tail 이 사용자 체감 가장 직접 영향. |
+| ① SLO | E2E Latency (p50/p95/p99) | timeseries (3-line, group-by 토글) | 전체 요청 처리 시간. 단순 비교 KPI. |
+| ① SLO | Token Throughput | timeseries (2-line) | prompt vs gen 토큰 처리량을 동시에. 색 다르게. (group-by 미적용 — counter 합산 식이라 별도 처리 필요) |
 | ① SLO | Request Completion Rate | timeseries (stacked) | finished_reason(stop/length/abort) 비율 시간변화. abort 가 급증하면 즉시 인지. |
 | ② System | Concurrency | timeseries (stacked area) | running + waiting 누적. waiting 이 크면 처리 한계. |
 | ② System | KV Cache Usage + Waiting | timeseries (avg/max + 보조 dashed line) | avg/max 만 보면 한계 도달 여부만 알 수 있음. waiting 큐 길이를 이중 축으로 같이 그려 "사용률 높고 waiting 도 늘면 실질 압력" 컨텍스트 제공. |
-| ② System | Queue Wait p95 | timeseries (single) | 큐 대기 자체가 SLO 침해 신호. |
-| ② System | Prefill vs Decode p95 | timeseries (2-line) | 어느 단계가 병목인지 분리해서 본다. |
+| ② System | Queue Wait p95 | timeseries (single, group-by 토글) | 큐 대기 자체가 SLO 침해 신호. |
+| ② System | Prefill vs Decode p95 | timeseries (2-line, group-by 토글) | 어느 단계가 병목인지 분리해서 본다. |
 | ② System | Active Deployments | stat | 현재 운영 중인 모델×가속기 조합 수. 상황 파악용. |
 | ③ Prefix Cache | Prefix Cache Hit Rate + Queries/sec | timeseries (full width, dual axis) | hit rate 단독은 분모 0(트래픽 없음/prefix caching 비활성) 시 NaN 으로 빈 시리즈 → 원인 불분명. queries/sec 보조선을 함께 그려서 0/0 상황을 시각적으로 즉시 구분. |
 | ④ Workload | Prompt Token Length | heatmap | 입력 길이 분포. histogram 메트릭이라 heatmap 자연스러움. |
