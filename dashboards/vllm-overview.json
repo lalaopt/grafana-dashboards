@@ -192,14 +192,14 @@
       "gridPos": {"h": 1, "w": 24, "x": 0, "y": 34},
       "id": 102,
       "panels": [],
-      "title": "③ KV Cache Deep Dive",
+      "title": "③ Prefix Cache",
       "type": "row"
     },
     {
       "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
       "description": "Prefix cache hit rate = rate(hits) / rate(queries).",
       "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "palette-classic"}, "custom": {"fillOpacity": 10}}, "overrides": []},
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 35},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 35},
       "id": 11,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "lastNotNull"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
@@ -209,47 +209,8 @@
       "type": "timeseries"
     },
     {
-      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-      "description": "KV 블록 생명주기 (할당 → 제거) 분포.",
-      "fieldConfig": {"defaults": {"unit": "s", "custom": {"hideFrom": {"tooltip": false, "viz": false, "legend": false}, "scaleDistribution": {"type": "linear"}}}, "overrides": []},
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 35},
-      "id": 12,
-      "options": {"calculate": false, "cellGap": 1, "color": {"exponent": 0.5, "fill": "dark-orange", "mode": "scheme", "reverse": false, "scale": "exponential", "scheme": "Oranges", "steps": 64}, "exemplars": {"color": "rgba(255,0,255,0.7)"}, "filterValues": {"le": 1e-9}, "legend": {"show": true}, "rowsFrame": {"layout": "auto"}, "tooltip": {"show": true, "yHistogram": false}, "yAxis": {"axisPlacement": "left", "reverse": false, "unit": "s"}},
-      "targets": [
-        {"expr": "sum by (le) (rate(vllm:kv_block_lifetime_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "format": "heatmap", "legendFormat": "{{le}}", "refId": "A"}
-      ],
-      "title": "KV Block Lifetime",
-      "type": "heatmap"
-    },
-    {
-      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-      "description": "마지막 접근 → 제거까지 유휴 시간 분포.",
-      "fieldConfig": {"defaults": {"unit": "s", "custom": {"hideFrom": {"tooltip": false, "viz": false, "legend": false}, "scaleDistribution": {"type": "linear"}}}, "overrides": []},
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 43},
-      "id": 13,
-      "options": {"calculate": false, "cellGap": 1, "color": {"exponent": 0.5, "fill": "dark-orange", "mode": "scheme", "reverse": false, "scale": "exponential", "scheme": "Purples", "steps": 64}, "exemplars": {"color": "rgba(255,0,255,0.7)"}, "filterValues": {"le": 1e-9}, "legend": {"show": true}, "rowsFrame": {"layout": "auto"}, "tooltip": {"show": true, "yHistogram": false}, "yAxis": {"axisPlacement": "left", "reverse": false, "unit": "s"}},
-      "targets": [
-        {"expr": "sum by (le) (rate(vllm:kv_block_idle_before_evict_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "format": "heatmap", "legendFormat": "{{le}}", "refId": "A"}
-      ],
-      "title": "KV Idle Before Evict",
-      "type": "heatmap"
-    },
-    {
-      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-      "description": "KV 블록 재사용 간격 분포.",
-      "fieldConfig": {"defaults": {"unit": "s", "custom": {"hideFrom": {"tooltip": false, "viz": false, "legend": false}, "scaleDistribution": {"type": "linear"}}}, "overrides": []},
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 43},
-      "id": 14,
-      "options": {"calculate": false, "cellGap": 1, "color": {"exponent": 0.5, "fill": "dark-orange", "mode": "scheme", "reverse": false, "scale": "exponential", "scheme": "Blues", "steps": 64}, "exemplars": {"color": "rgba(255,0,255,0.7)"}, "filterValues": {"le": 1e-9}, "legend": {"show": true}, "rowsFrame": {"layout": "auto"}, "tooltip": {"show": true, "yHistogram": false}, "yAxis": {"axisPlacement": "left", "reverse": false, "unit": "s"}},
-      "targets": [
-        {"expr": "sum by (le) (rate(vllm:kv_block_reuse_gap_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "format": "heatmap", "legendFormat": "{{le}}", "refId": "A"}
-      ],
-      "title": "KV Reuse Gap",
-      "type": "heatmap"
-    },
-    {
       "collapsed": false,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 51},
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 43},
       "id": 103,
       "panels": [],
       "title": "④ Workload Characteristics",
@@ -259,7 +220,7 @@
       "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
       "description": "Prompt 토큰 길이 분포.",
       "fieldConfig": {"defaults": {"unit": "short", "custom": {"hideFrom": {"tooltip": false, "viz": false, "legend": false}, "scaleDistribution": {"type": "linear"}}}, "overrides": []},
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 52},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 44},
       "id": 15,
       "options": {"calculate": false, "cellGap": 1, "color": {"exponent": 0.5, "fill": "dark-orange", "mode": "scheme", "reverse": false, "scale": "exponential", "scheme": "Greens", "steps": 64}, "exemplars": {"color": "rgba(255,0,255,0.7)"}, "filterValues": {"le": 1e-9}, "legend": {"show": true}, "rowsFrame": {"layout": "auto"}, "tooltip": {"show": true, "yHistogram": false}, "yAxis": {"axisPlacement": "left", "reverse": false, "unit": "short"}},
       "targets": [
@@ -272,7 +233,7 @@
       "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
       "description": "Generation 토큰 길이 분포.",
       "fieldConfig": {"defaults": {"unit": "short", "custom": {"hideFrom": {"tooltip": false, "viz": false, "legend": false}, "scaleDistribution": {"type": "linear"}}}, "overrides": []},
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 52},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 44},
       "id": 16,
       "options": {"calculate": false, "cellGap": 1, "color": {"exponent": 0.5, "fill": "dark-orange", "mode": "scheme", "reverse": false, "scale": "exponential", "scheme": "Reds", "steps": 64}, "exemplars": {"color": "rgba(255,0,255,0.7)"}, "filterValues": {"le": 1e-9}, "legend": {"show": true}, "rowsFrame": {"layout": "auto"}, "tooltip": {"show": true, "yHistogram": false}, "yAxis": {"axisPlacement": "left", "reverse": false, "unit": "short"}},
       "targets": [
@@ -285,7 +246,7 @@
       "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
       "description": "finished_reason 별 비율.",
       "fieldConfig": {"defaults": {"unit": "percentunit", "color": {"mode": "palette-classic"}}, "overrides": []},
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 60},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 52},
       "id": 17,
       "options": {"legend": {"displayMode": "list", "placement": "right", "values": ["percent"]}, "pieType": "donut", "reduceOptions": {"calcs": ["sum"], "fields": "", "values": false}, "tooltip": {"mode": "single", "sort": "none"}},
       "targets": [
@@ -298,7 +259,7 @@
       "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
       "description": "가속기별 generation 토큰 처리량 점유율.",
       "fieldConfig": {"defaults": {"unit": "tps", "color": {"mode": "palette-classic"}}, "overrides": []},
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 60},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 52},
       "id": 18,
       "options": {"legend": {"displayMode": "list", "placement": "right", "values": ["value", "percent"]}, "pieType": "donut", "reduceOptions": {"calcs": ["mean"], "fields": "", "values": false}, "tooltip": {"mode": "single", "sort": "none"}},
       "targets": [

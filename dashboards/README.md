@@ -93,10 +93,7 @@ Grafana UI → Dashboards → Import → JSON 업로드 → Datasource 선택(Pr
 | ② System | Queue Wait p95 | timeseries (single) | 큐 대기 자체가 SLO 침해 신호. |
 | ② System | Prefill vs Decode p95 | timeseries (2-line) | 어느 단계가 병목인지 분리해서 본다. |
 | ② System | Active Deployments | stat | 현재 운영 중인 모델×가속기 조합 수. 상황 파악용. |
-| ③ KV cache | Prefix Cache Hit Rate | timeseries | 0~1 비율. PromQL 에서 rate(hits)/rate(queries) 로 계산. |
-| ③ KV cache | KV Block Lifetime | heatmap | 분포가 핵심이라 heatmap. 짧은 lifetime 이 많으면 churn. |
-| ③ KV cache | Idle Before Evict | heatmap | 같은 이유. 색 구분(Purples) 으로 lifetime 과 차별. |
-| ③ KV cache | Reuse Gap | heatmap | 재사용 간격 분포로 캐시 효율 진단. |
+| ③ Prefix Cache | Prefix Cache Hit Rate | timeseries (full width) | 0~1 비율. PromQL 에서 rate(hits)/rate(queries) 로 계산. |
 | ④ Workload | Prompt Token Length | heatmap | 입력 길이 분포. histogram 메트릭이라 heatmap 자연스러움. |
 | ④ Workload | Generation Token Length | heatmap | 출력 길이 분포. |
 | ④ Workload | Finish Reason Ratio | donut | 종료 이유 비율을 한눈에. abort 가 보이면 위험 신호. |
@@ -140,5 +137,5 @@ Grafana UI → Dashboards → Import → JSON 업로드 → Datasource 선택(Pr
 ## 알려진 한계
 
 - TP/quantization/KV dtype 별 비교는 본 대시보드 범위 밖. (현재 라벨로 노출 안 됨 — `docs/servicemonitor-labels.md` 참고)
-- KV residency heatmap 패널은 vLLM 서버에 `--kv-cache-metrics-sample` 옵션이 켜져 있어야 데이터가 들어온다. 옵션이 없으면 빈 패널.
+- KV residency 메트릭 (`kv_block_lifetime`, `kv_block_idle_before_evict`, `kv_block_reuse_gap`) 은 vLLM 측 미구현 (`--kv-cache-metrics-sample` 플래그 미동작) 으로 판단되어 패널 제외. 추후 vLLM 에서 정식 노출되면 heatmap 으로 다시 추가 가능.
 - 모델 수가 100개 초과로 가면 Per-Model 의 panel repeat 가 무거워질 수 있다. 그 시점에 row 를 더 세분화하거나 별도 dashboard 로 분리.
