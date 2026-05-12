@@ -47,7 +47,7 @@
       "id": 1,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
-        {"expr": "histogram_quantile(${percentile:raw}, sum by (le${groupby:raw}) (rate(vllm:time_to_first_token_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "${percentile:text} {{accelerator}}{{model}}", "refId": "A"}
+        {"expr": "histogram_quantile(${percentile:raw}, sum by (le${groupby:raw}) (rate(vllm:time_to_first_token_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "${percentile:text} {{model}} ({{accelerator}})", "refId": "A"}
       ],
       "title": "TTFT (${percentile:text})",
       "type": "timeseries"
@@ -60,7 +60,7 @@
       "id": 2,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
-        {"expr": "histogram_quantile(${percentile:raw}, sum by (le${groupby:raw}) (rate(vllm:inter_token_latency_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "${percentile:text} {{accelerator}}{{model}}", "refId": "A"}
+        {"expr": "histogram_quantile(${percentile:raw}, sum by (le${groupby:raw}) (rate(vllm:inter_token_latency_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "${percentile:text} {{model}} ({{accelerator}})", "refId": "A"}
       ],
       "title": "TPOT (${percentile:text})",
       "type": "timeseries"
@@ -73,34 +73,46 @@
       "id": 3,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
-        {"expr": "histogram_quantile(${percentile:raw}, sum by (le${groupby:raw}) (rate(vllm:e2e_request_latency_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "${percentile:text} {{accelerator}}{{model}}", "refId": "A"}
+        {"expr": "histogram_quantile(${percentile:raw}, sum by (le${groupby:raw}) (rate(vllm:e2e_request_latency_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "${percentile:text} {{model}} ({{accelerator}})", "refId": "A"}
       ],
       "title": "E2E Request Latency (${percentile:text})",
       "type": "timeseries"
     },
     {
       "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-      "description": "Prompt + Generation 토큰 처리량 (tok/s).",
+      "description": "Prompt(입력) 토큰 처리량 (tok/s). prefill 단계의 throughput.",
       "fieldConfig": {"defaults": {"unit": "tps", "color": {"mode": "palette-classic"}}, "overrides": []},
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 9},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 9},
       "id": 4,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
-        {"expr": "sum by (__name__${groupby:raw}) (rate(vllm:prompt_tokens_total{model=~\"$model\",accelerator=~\"$accelerator\"}[1m]))", "legendFormat": "prompt {{accelerator}}{{model}}", "refId": "A"},
-        {"expr": "sum by (__name__${groupby:raw}) (rate(vllm:generation_tokens_total{model=~\"$model\",accelerator=~\"$accelerator\"}[1m]))", "legendFormat": "generation {{accelerator}}{{model}}", "refId": "B"}
+        {"expr": "sum by (__name__${groupby:raw}) (rate(vllm:prompt_tokens_total{model=~\"$model\",accelerator=~\"$accelerator\"}[1m]))", "legendFormat": "{{model}} ({{accelerator}})", "refId": "A"}
       ],
-      "title": "Token Throughput (tok/s)",
+      "title": "Prompt Throughput (tok/s)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "description": "Generation(출력) 토큰 처리량 (tok/s). decode 단계의 throughput.",
+      "fieldConfig": {"defaults": {"unit": "tps", "color": {"mode": "palette-classic"}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 9},
+      "id": 20,
+      "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [
+        {"expr": "sum by (__name__${groupby:raw}) (rate(vllm:generation_tokens_total{model=~\"$model\",accelerator=~\"$accelerator\"}[1m]))", "legendFormat": "{{model}} ({{accelerator}})", "refId": "A"}
+      ],
+      "title": "Generation Throughput (tok/s)",
       "type": "timeseries"
     },
     {
       "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
       "description": "요청 완료 rate (finished_reason 별).",
       "fieldConfig": {"defaults": {"unit": "reqps", "color": {"mode": "palette-classic"}, "custom": {"stacking": {"mode": "normal", "group": "A"}}}, "overrides": []},
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 9},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 9},
       "id": 5,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
-        {"expr": "sum by (finished_reason${groupby:raw}) (rate(vllm:request_success_total{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "legendFormat": "{{finished_reason}} {{accelerator}}{{model}}", "refId": "A"}
+        {"expr": "sum by (finished_reason${groupby:raw}) (rate(vllm:request_success_total{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "legendFormat": "{{finished_reason}} {{model}} ({{accelerator}})", "refId": "A"}
       ],
       "title": "Request Completion Rate by finished_reason",
       "type": "timeseries"
@@ -121,8 +133,8 @@
       "id": 6,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
-        {"expr": "sum by (__name__${groupby:raw}) (vllm:num_requests_running{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "running {{accelerator}}{{model}}", "refId": "A"},
-        {"expr": "sum by (__name__${groupby:raw}) (vllm:num_requests_waiting{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "waiting {{accelerator}}{{model}}", "refId": "B"}
+        {"expr": "sum by (__name__${groupby:raw}) (vllm:num_requests_running{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "running {{model}} ({{accelerator}})", "refId": "A"},
+        {"expr": "sum by (__name__${groupby:raw}) (vllm:num_requests_waiting{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "waiting {{model}} ({{accelerator}})", "refId": "B"}
       ],
       "title": "Concurrency (Running + Waiting)",
       "type": "timeseries"
@@ -150,9 +162,9 @@
       "id": 7,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
-        {"expr": "avg by (__name__${groupby:raw}) (vllm:kv_cache_usage_perc{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "avg {{accelerator}}{{model}}", "refId": "A"},
-        {"expr": "max by (__name__${groupby:raw}) (vllm:kv_cache_usage_perc{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "max {{accelerator}}{{model}}", "refId": "B"},
-        {"expr": "sum by (__name__${groupby:raw}) (vllm:num_requests_waiting{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "waiting {{accelerator}}{{model}}", "refId": "C"}
+        {"expr": "avg by (__name__${groupby:raw}) (vllm:kv_cache_usage_perc{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "avg {{model}} ({{accelerator}})", "refId": "A"},
+        {"expr": "max by (__name__${groupby:raw}) (vllm:kv_cache_usage_perc{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "max {{model}} ({{accelerator}})", "refId": "B"},
+        {"expr": "sum by (__name__${groupby:raw}) (vllm:num_requests_waiting{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "waiting {{model}} ({{accelerator}})", "refId": "C"}
       ],
       "title": "KV Cache Usage (avg / max) + Waiting",
       "type": "timeseries"
@@ -165,7 +177,7 @@
       "id": 8,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
-        {"expr": "histogram_quantile(${percentile:raw}, sum by (le${groupby:raw}) (rate(vllm:request_queue_time_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "queue ${percentile:text} {{accelerator}}{{model}}", "refId": "A"}
+        {"expr": "histogram_quantile(${percentile:raw}, sum by (le${groupby:raw}) (rate(vllm:request_queue_time_seconds_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])))", "legendFormat": "queue ${percentile:text} {{model}} ({{accelerator}})", "refId": "A"}
       ],
       "title": "Queue Wait Time (${percentile:text})",
       "type": "timeseries"
@@ -214,8 +226,8 @@
       "id": 11,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "lastNotNull"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
-        {"expr": "sum by (__name__${groupby:raw}) (rate(vllm:prefix_cache_hits{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])) / sum by (__name__${groupby:raw}) (rate(vllm:prefix_cache_queries{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "legendFormat": "hit rate {{accelerator}}{{model}}", "refId": "A"},
-        {"expr": "sum by (__name__${groupby:raw}) (rate(vllm:prefix_cache_queries{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "legendFormat": "queries/sec {{accelerator}}{{model}}", "refId": "B"}
+        {"expr": "sum by (__name__${groupby:raw}) (rate(vllm:prefix_cache_hits{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])) / sum by (__name__${groupby:raw}) (rate(vllm:prefix_cache_queries{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "legendFormat": "hit rate {{model}} ({{accelerator}})", "refId": "A"},
+        {"expr": "sum by (__name__${groupby:raw}) (rate(vllm:prefix_cache_queries{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "legendFormat": "queries/sec {{model}} ({{accelerator}})", "refId": "B"}
       ],
       "title": "Prefix Cache Hit Rate + Queries/sec",
       "type": "timeseries"
@@ -236,7 +248,7 @@
       "id": 15,
       "options": {"calculate": false, "cellGap": 1, "color": {"exponent": 0.5, "fill": "dark-orange", "mode": "scheme", "reverse": false, "scale": "exponential", "scheme": "Greens", "steps": 64}, "exemplars": {"color": "rgba(255,0,255,0.7)"}, "filterValues": {"le": 1e-9}, "legend": {"show": true}, "rowsFrame": {"layout": "auto"}, "tooltip": {"show": true, "yHistogram": false}, "yAxis": {"axisPlacement": "left", "reverse": false, "unit": "short"}},
       "targets": [
-        {"expr": "sum by (le${groupby:raw}) (rate(vllm:request_prompt_tokens_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "format": "heatmap", "legendFormat": "{{le}} {{accelerator}}{{model}}", "refId": "A"}
+        {"expr": "sum by (le${groupby:raw}) (rate(vllm:request_prompt_tokens_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "format": "heatmap", "legendFormat": "{{le}} {{model}} ({{accelerator}})", "refId": "A"}
       ],
       "title": "Prompt Token Length Distribution",
       "type": "heatmap"
@@ -249,7 +261,7 @@
       "id": 16,
       "options": {"calculate": false, "cellGap": 1, "color": {"exponent": 0.5, "fill": "dark-orange", "mode": "scheme", "reverse": false, "scale": "exponential", "scheme": "Reds", "steps": 64}, "exemplars": {"color": "rgba(255,0,255,0.7)"}, "filterValues": {"le": 1e-9}, "legend": {"show": true}, "rowsFrame": {"layout": "auto"}, "tooltip": {"show": true, "yHistogram": false}, "yAxis": {"axisPlacement": "left", "reverse": false, "unit": "short"}},
       "targets": [
-        {"expr": "sum by (le${groupby:raw}) (rate(vllm:request_generation_tokens_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "format": "heatmap", "legendFormat": "{{le}} {{accelerator}}{{model}}", "refId": "A"}
+        {"expr": "sum by (le${groupby:raw}) (rate(vllm:request_generation_tokens_bucket{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "format": "heatmap", "legendFormat": "{{le}} {{model}} ({{accelerator}})", "refId": "A"}
       ],
       "title": "Generation Token Length Distribution",
       "type": "heatmap"
@@ -262,7 +274,7 @@
       "id": 17,
       "options": {"legend": {"displayMode": "list", "placement": "right", "values": ["percent"]}, "pieType": "donut", "reduceOptions": {"calcs": ["sum"], "fields": "", "values": false}, "tooltip": {"mode": "single", "sort": "none"}},
       "targets": [
-        {"expr": "sum by (finished_reason${groupby:raw}) (increase(vllm:request_success_total{model=~\"$model\",accelerator=~\"$accelerator\"}[$__range]))", "legendFormat": "{{finished_reason}} {{accelerator}}{{model}}", "refId": "A"}
+        {"expr": "sum by (finished_reason${groupby:raw}) (increase(vllm:request_success_total{model=~\"$model\",accelerator=~\"$accelerator\"}[$__range]))", "legendFormat": "{{finished_reason}} {{model}} ({{accelerator}})", "refId": "A"}
       ],
       "title": "Finish Reason Ratio",
       "type": "piechart"
@@ -335,19 +347,19 @@
         "type": "query"
       },
       {
-        "current": {"selected": true, "text": "(total)", "value": ""},
-        "description": "패널 시리즈 그룹화 라벨. model 은 가속기 정보를 잃어 모호하므로 'model + accelerator' 만 제공.",
+        "current": {"selected": true, "text": "accelerator", "value": ", accelerator"},
+        "description": "패널 시리즈 그룹화 라벨. 'model' 선택 시 가속기까지 자동 분리 (같은 모델이 여러 가속기에 떠 있을 때 인스턴스 구분).",
         "hide": 0,
         "includeAll": false,
         "label": "Group by",
         "multi": false,
         "name": "groupby",
         "options": [
-          {"selected": true, "text": "(total)", "value": ""},
-          {"selected": false, "text": "accelerator", "value": ", accelerator"},
-          {"selected": false, "text": "model + accelerator", "value": ", model, accelerator"}
+          {"selected": false, "text": "(total)", "value": ""},
+          {"selected": true, "text": "accelerator", "value": ", accelerator"},
+          {"selected": false, "text": "model", "value": ", model, accelerator"}
         ],
-        "query": "(total) : ,accelerator : \\, accelerator,model + accelerator : \\, model\\, accelerator",
+        "query": "(total) : ,accelerator : \\, accelerator,model : \\, model\\, accelerator",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"

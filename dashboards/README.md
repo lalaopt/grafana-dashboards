@@ -53,7 +53,7 @@ Grafana UI → Dashboards → Import → JSON 업로드 → Datasource 선택(Pr
 | `DS_PROMETHEUS` | Datasource 선택 |
 | `accelerator` (multi, All) | 모든 패널 PromQL 의 `{accelerator=~"$accelerator"}` 필터 |
 | `model` (multi, All, depends on `$accelerator`) | `{model=~"$model"}` 필터 |
-| `groupby` (custom, single) | 시리즈 분리 키 — `(total)` / `accelerator` / `model + accelerator`. **model 단독은 같은 모델이 여러 가속기에 떠 있을 때 라인이 합쳐져 모호하므로 제거**. |
+| `groupby` (custom, single, **default `accelerator`**) | 시리즈 분리 키 — `(total)` / `accelerator` / `model`. **`model` 선택 시 PromQL 내부적으로 `(model, accelerator)` 둘 다 분리 — 같은 모델이 여러 가속기에 떠 있어도 인스턴스 구분 보장**. 표시 라벨이 "model" 이라 모델 중심으로 보고 싶을 때 쓰는 모드. |
 | `percentile` (custom, single) | latency 패널 5개가 표시할 분위수 — `p50` / `p95`(default) / `p99`. 한 번에 한 분위수만 보여 group-by 와 결합 시 라인 폭발 방지. |
 
 기본 `All` 선택 시 전체 집계. 특정 가속기/모델로 좁히고 싶을 때 토글.
@@ -65,9 +65,13 @@ Grafana UI → Dashboards → Import → JSON 업로드 → Datasource 선택(Pr
 - Heatmap (workload 분포): `sum by (le${groupby:raw}) (...)` — (total) 이 아닐 때 multi-series heatmap 이 되어 Grafana 가 시리즈별 row 분리 시각화. 시각이 복잡해질 수 있어 `(total)` 권장.
 - Piechart (Finish Reason): `sum by (finished_reason${groupby:raw}) (...)` — group-by 시 slice 수 (finished_reason × 그룹) 곱 증가.
 
-variable value 인코딩: `(total)` → `""`, `accelerator` → `", accelerator"`, `model + accelerator` → `", model, accelerator"`. PromQL 표현식에 그대로 삽입되므로 trailing/empty grouping 문법 오류 없음.
+variable value 인코딩: `(total)` → `""`, `accelerator` → `", accelerator"`, `model` (UI label) → `", model, accelerator"` (실제 PromQL grouping). PromQL 표현식에 그대로 삽입되므로 trailing/empty grouping 문법 오류 없음.
 
-**`model + accelerator` 선택 시 왜 둘 다 분리하나:** 같은 모델 ID 가 여러 가속기에 떠 있을 때 (예: `llama32-1b` 가 a100/h100/v100 셋에) `sum by (model)` 만 하면 가속기 라벨이 제거되어 데이터가 한 줄로 합쳐진다. `(model, accelerator)` 둘 다 보존해야 인스턴스가 분리되어 비교 가능.
+**왜 `model` 옵션이 내부적으로 `(model, accelerator)` 둘 다 grouping 하나:** 같은 모델 ID 가 여러 가속기에 떠 있을 때 (예: `llama32-1b` 가 a100/h100/v100 셋에) `sum by (model)` 만 하면 가속기 라벨이 제거되어 데이터가 한 줄로 합쳐진다. UI label 은 "model" 로 단순하게 유지하고 내부 grouping 만 둘 다 포함 — 사용자가 모델 중심으로 보되 가속기 분리는 자동 보장.
+
+**legend 표현:** `{{model}} ({{accelerator}})` 으로 모델을 주, 가속기를 부가(괄호)로 표시. `(total)` 모드에선 양쪽 다 빈 값이라 어색한 빈 괄호가 보일 수 있는데, 디폴트가 `accelerator` 라 일반 사용에서는 발생 안 함.
+
+**디폴트가 `accelerator` 인 이유:** `(total)` 디폴트 시 단일 시리즈로 합산되는데, 트래픽 패턴/메트릭 가용성에 따라 빈 결과로 보이는 경우가 있어 첫 진입 시 "No data" 로 오해되기 쉬움. `accelerator` 는 가속기당 1 라인이라 의미 있는 비교 + 라인 수도 관리 가능.
 
 **percentile 동작:** latency 패널 5개(TTFT/TPOT/E2E/Queue Wait/Prefill+Decode)는 한 번에 한 분위수만 표시. `histogram_quantile(${percentile:raw}, ...)`. 분위수 비교가 필요하면 variable 토글. 한 번에 모든 분위수 + 모든 그룹을 보면 라인 수가 폭발(예: 3 percentile × 20 model+accelerator = 60 라인)하기 때문에 의도적으로 단일 분위수만 노출.
 
@@ -102,7 +106,8 @@ variable value 인코딩: `(total)` → `""`, `accelerator` → `", accelerator"
 | ① SLO | TTFT (선택 분위수) | timeseries (group-by + percentile 토글) | 사용자 체감 첫 토큰 지연. avg 대신 분위수로 tail latency 가시화. 분위수 1개 × 그룹 라인 — 라인 폭발 방지. |
 | ① SLO | TPOT (선택 분위수) | timeseries (group-by + percentile 토글) | 스트리밍 시 토큰 간 지연. tail 이 사용자 체감 가장 직접 영향. |
 | ① SLO | E2E Latency (선택 분위수) | timeseries (group-by + percentile 토글) | 전체 요청 처리 시간. 단순 비교 KPI. |
-| ① SLO | Token Throughput | timeseries (2-line, group-by 토글) | prompt vs gen 토큰 처리량을 동시에. group-by 적용 시 가속기/모델별로 prompt·gen 각각 분리. |
+| ① SLO | Prompt Throughput | timeseries (group-by 토글) | **prompt** = 사용자가 vLLM 에 보낸 입력 토큰 수. prefill 단계의 throughput. |
+| ① SLO | Generation Throughput | timeseries (group-by 토글) | **generation** = vLLM 이 생성해낸 출력 토큰 수. decode 단계의 throughput. 두 값의 비율은 워크로드 특성(요약/코드생성 등)을 나타냄. |
 | ① SLO | Request Completion Rate | timeseries (stacked, group-by 토글) | finished_reason(stop/length/abort) 비율 시간변화. group-by 시 finished_reason × 그룹 라인. |
 | ② System | Concurrency | timeseries (stacked area, group-by 토글) | running + waiting 누적. group-by 시 가속기별 running/waiting 분리. |
 | ② System | KV Cache Usage + Waiting | timeseries (avg/max + dashed waiting, group-by 토글) | avg/max 만 보면 한계 도달 여부만. waiting 큐 길이를 이중 축으로 같이 그려 "사용률 높고 waiting 도 늘면 실질 압력" 컨텍스트. group-by 시 가속기/모델별 avg·max·waiting. |
