@@ -57,7 +57,14 @@ Grafana UI → Dashboards → Import → JSON 업로드 → Datasource 선택(Pr
 
 기본 `All` 선택 시 전체 집계. 특정 가속기/모델로 좁히고 싶을 때 토글.
 
-**groupby 동작:** TTFT/TPOT/E2E/Queue Wait/Prefill+Decode 패널은 `sum by (le${groupby:raw}) (...)` 형태. variable 값이 빈 문자열이면 `sum by (le)` 로 전체 합산되고, `, accelerator` 이면 `sum by (le, accelerator)` 로 가속기별 분리. 모델 수십 개에서 `model` 로 분리하면 라인 폭발하니 주의.
+**groupby 동작:** Overview 의 10개 timeseries 패널이 모두 영향을 받는다.
+
+- Histogram 패널(TTFT/TPOT/E2E/Queue Wait/Prefill+Decode): `sum by (le${groupby:raw}) (rate(..._bucket[5m]))` — `le` 는 분위수 계산에 필수, group-by 라벨이 거기에 추가됨.
+- Counter/Instant 패널(Throughput/Completion/Concurrency/KV Usage/Prefix Hit Rate): `sum by (__name__${groupby:raw}) (...)` — `__name__` 는 메트릭당 동일하므로 합산 결과 단일 시리즈 보존용 dummy. group-by 라벨이 거기에 추가되면 그 라벨별로 시리즈 분리.
+
+variable value 인코딩: `(total)` → `""`, `accelerator` → `", accelerator"`, `model` → `", model"`. PromQL 표현식에 그대로 삽입되므로 trailing/empty grouping 문법 오류 없음.
+
+모델 수십 개에서 `model` 로 분리하면 라인 폭발하니 주의.
 
 ### `vllm-per-model.json`
 | 변수 | 동작 |
@@ -89,14 +96,14 @@ Grafana UI → Dashboards → Import → JSON 업로드 → Datasource 선택(Pr
 | ① SLO | TTFT (p50/p95/p99) | timeseries (3-line, group-by 토글) | 사용자 체감 지연. avg 대신 분위수로 tail latency 가시화. `groupby` 변수로 가속기/모델별 분리 가능. |
 | ① SLO | TPOT (p50/p95/p99) | timeseries (3-line, group-by 토글) | 스트리밍 시 토큰 간 지연. tail 이 사용자 체감 가장 직접 영향. |
 | ① SLO | E2E Latency (p50/p95/p99) | timeseries (3-line, group-by 토글) | 전체 요청 처리 시간. 단순 비교 KPI. |
-| ① SLO | Token Throughput | timeseries (2-line) | prompt vs gen 토큰 처리량을 동시에. 색 다르게. (group-by 미적용 — counter 합산 식이라 별도 처리 필요) |
-| ① SLO | Request Completion Rate | timeseries (stacked) | finished_reason(stop/length/abort) 비율 시간변화. abort 가 급증하면 즉시 인지. |
-| ② System | Concurrency | timeseries (stacked area) | running + waiting 누적. waiting 이 크면 처리 한계. |
-| ② System | KV Cache Usage + Waiting | timeseries (avg/max + 보조 dashed line) | avg/max 만 보면 한계 도달 여부만 알 수 있음. waiting 큐 길이를 이중 축으로 같이 그려 "사용률 높고 waiting 도 늘면 실질 압력" 컨텍스트 제공. |
+| ① SLO | Token Throughput | timeseries (2-line, group-by 토글) | prompt vs gen 토큰 처리량을 동시에. group-by 적용 시 가속기/모델별로 prompt·gen 각각 분리. |
+| ① SLO | Request Completion Rate | timeseries (stacked, group-by 토글) | finished_reason(stop/length/abort) 비율 시간변화. group-by 시 finished_reason × 그룹 라인. |
+| ② System | Concurrency | timeseries (stacked area, group-by 토글) | running + waiting 누적. group-by 시 가속기별 running/waiting 분리. |
+| ② System | KV Cache Usage + Waiting | timeseries (avg/max + dashed waiting, group-by 토글) | avg/max 만 보면 한계 도달 여부만. waiting 큐 길이를 이중 축으로 같이 그려 "사용률 높고 waiting 도 늘면 실질 압력" 컨텍스트. group-by 시 가속기/모델별 avg·max·waiting. |
 | ② System | Queue Wait p95 | timeseries (single, group-by 토글) | 큐 대기 자체가 SLO 침해 신호. |
 | ② System | Prefill vs Decode p95 | timeseries (2-line, group-by 토글) | 어느 단계가 병목인지 분리해서 본다. |
 | ② System | Active Deployments | stat | 현재 운영 중인 모델×가속기 조합 수. 상황 파악용. |
-| ③ Prefix Cache | Prefix Cache Hit Rate + Queries/sec | timeseries (full width, dual axis) | hit rate 단독은 분모 0(트래픽 없음/prefix caching 비활성) 시 NaN 으로 빈 시리즈 → 원인 불분명. queries/sec 보조선을 함께 그려서 0/0 상황을 시각적으로 즉시 구분. |
+| ③ Prefix Cache | Prefix Cache Hit Rate + Queries/sec | timeseries (full width, dual axis, group-by 토글) | hit rate 단독은 분모 0(트래픽 없음/prefix caching 비활성) 시 NaN 으로 빈 시리즈 → 원인 불분명. queries/sec 보조선을 함께 그려서 0/0 상황을 시각적으로 즉시 구분. group-by 시 그룹별 hit rate 와 queries/sec 분리. |
 | ④ Workload | Prompt Token Length | heatmap | 입력 길이 분포. histogram 메트릭이라 heatmap 자연스러움. |
 | ④ Workload | Generation Token Length | heatmap | 출력 길이 분포. |
 | ④ Workload | Finish Reason Ratio | donut | 종료 이유 비율을 한눈에. abort 가 보이면 위험 신호. |

@@ -92,8 +92,8 @@
       "id": 4,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
-        {"expr": "sum(rate(vllm:prompt_tokens_total{model=~\"$model\",accelerator=~\"$accelerator\"}[1m]))", "legendFormat": "prompt", "refId": "A"},
-        {"expr": "sum(rate(vllm:generation_tokens_total{model=~\"$model\",accelerator=~\"$accelerator\"}[1m]))", "legendFormat": "generation", "refId": "B"}
+        {"expr": "sum by (__name__${groupby:raw}) (rate(vllm:prompt_tokens_total{model=~\"$model\",accelerator=~\"$accelerator\"}[1m]))", "legendFormat": "prompt {{accelerator}}{{model}}", "refId": "A"},
+        {"expr": "sum by (__name__${groupby:raw}) (rate(vllm:generation_tokens_total{model=~\"$model\",accelerator=~\"$accelerator\"}[1m]))", "legendFormat": "generation {{accelerator}}{{model}}", "refId": "B"}
       ],
       "title": "Token Throughput (tok/s)",
       "type": "timeseries"
@@ -106,7 +106,7 @@
       "id": 5,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
-        {"expr": "sum by (finished_reason) (rate(vllm:request_success_total{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "legendFormat": "{{finished_reason}}", "refId": "A"}
+        {"expr": "sum by (finished_reason${groupby:raw}) (rate(vllm:request_success_total{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "legendFormat": "{{finished_reason}} {{accelerator}}{{model}}", "refId": "A"}
       ],
       "title": "Request Completion Rate by finished_reason",
       "type": "timeseries"
@@ -127,8 +127,8 @@
       "id": 6,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
-        {"expr": "sum(vllm:num_requests_running{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "running", "refId": "A"},
-        {"expr": "sum(vllm:num_requests_waiting{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "waiting", "refId": "B"}
+        {"expr": "sum by (__name__${groupby:raw}) (vllm:num_requests_running{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "running {{accelerator}}{{model}}", "refId": "A"},
+        {"expr": "sum by (__name__${groupby:raw}) (vllm:num_requests_waiting{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "waiting {{accelerator}}{{model}}", "refId": "B"}
       ],
       "title": "Concurrency (Running + Waiting)",
       "type": "timeseries"
@@ -156,9 +156,9 @@
       "id": 7,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
-        {"expr": "avg(vllm:kv_cache_usage_perc{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "avg", "refId": "A"},
-        {"expr": "max(vllm:kv_cache_usage_perc{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "max", "refId": "B"},
-        {"expr": "sum(vllm:num_requests_waiting{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "waiting", "refId": "C"}
+        {"expr": "avg by (__name__${groupby:raw}) (vllm:kv_cache_usage_perc{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "avg {{accelerator}}{{model}}", "refId": "A"},
+        {"expr": "max by (__name__${groupby:raw}) (vllm:kv_cache_usage_perc{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "max {{accelerator}}{{model}}", "refId": "B"},
+        {"expr": "sum by (__name__${groupby:raw}) (vllm:num_requests_waiting{model=~\"$model\",accelerator=~\"$accelerator\"})", "legendFormat": "waiting {{accelerator}}{{model}}", "refId": "C"}
       ],
       "title": "KV Cache Usage (avg / max) + Waiting",
       "type": "timeseries"
@@ -234,8 +234,8 @@
       "id": 11,
       "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "lastNotNull"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [
-        {"expr": "sum(rate(vllm:prefix_cache_hits{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])) / sum(rate(vllm:prefix_cache_queries{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "legendFormat": "hit rate", "refId": "A"},
-        {"expr": "sum(rate(vllm:prefix_cache_queries{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "legendFormat": "queries/sec", "refId": "B"}
+        {"expr": "sum by (__name__${groupby:raw}) (rate(vllm:prefix_cache_hits{model=~\"$model\",accelerator=~\"$accelerator\"}[5m])) / sum by (__name__${groupby:raw}) (rate(vllm:prefix_cache_queries{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "legendFormat": "hit rate {{accelerator}}{{model}}", "refId": "A"},
+        {"expr": "sum by (__name__${groupby:raw}) (rate(vllm:prefix_cache_queries{model=~\"$model\",accelerator=~\"$accelerator\"}[5m]))", "legendFormat": "queries/sec {{accelerator}}{{model}}", "refId": "B"}
       ],
       "title": "Prefix Cache Hit Rate + Queries/sec",
       "type": "timeseries"
